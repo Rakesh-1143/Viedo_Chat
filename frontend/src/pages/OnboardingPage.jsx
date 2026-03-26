@@ -3,7 +3,18 @@ import useAuthUser from "../hooks/useAuthUser";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { completeOnboarding } from "../lib/api";
+<<<<<<< HEAD
 import { CameraIcon, LoaderIcon, MapPinIcon, ShipWheelIcon, ShuffleIcon, UploadIcon } from "lucide-react";
+=======
+import {
+  CameraIcon,
+  LoaderIcon,
+  MapPinIcon,
+  ShipWheelIcon,
+  ShuffleIcon,
+  UploadIcon,
+} from "lucide-react";
+>>>>>>> e0242ca (updating onbording page)
 import { LANGUAGES } from "../constants";
 import { useNavigate } from "react-router";
 
@@ -43,7 +54,15 @@ const OnboardingPage = () => {
   const { mutate: onboardingMutation, isPending } = useMutation({
     mutationFn: completeOnboarding,
     onSuccess: () => {
+<<<<<<< HEAD
       toast.success(isUpdating ? "Profile updated successfully" : "Profile onboarded successfully");
+=======
+      toast.success(
+        isUpdating
+          ? "Profile updated successfully"
+          : "Profile onboarded successfully",
+      );
+>>>>>>> e0242ca (updating onbording page)
       queryClient.invalidateQueries({ queryKey: ["authUser"] });
       if (isUpdating) {
         navigate("/");
@@ -93,8 +112,13 @@ const OnboardingPage = () => {
   }
 
   return (
+<<<<<<< HEAD
     <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
       <div className="card bg-base-200 w-full max-w-3xl shadow-xl">
+=======
+    <div className="min-h-screen bg-base-100 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="card bg-base-200 w-full max-w-3xl shadow-xl my-8">
+>>>>>>> e0242ca (updating onbording page)
         <div className="card-body p-6 sm:p-8">
           <div className="text-center mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold mb-2">
@@ -126,9 +150,15 @@ const OnboardingPage = () => {
                     <CameraIcon className="size-12 text-base-content opacity-40" />
                   </div>
                 )}
+<<<<<<< HEAD
                 
                 {/* Overlay for clicking to upload */}
                 <label 
+=======
+
+                {/* Overlay for clicking to upload */}
+                <label
+>>>>>>> e0242ca (updating onbording page)
                   htmlFor="profile-pic"
                   className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white text-[10px] font-bold"
                 >
@@ -137,7 +167,11 @@ const OnboardingPage = () => {
                 </label>
               </div>
 
+<<<<<<< HEAD
               <input 
+=======
+              <input
+>>>>>>> e0242ca (updating onbording page)
                 type="file"
                 id="profile-pic"
                 className="hidden"
@@ -177,7 +211,13 @@ const OnboardingPage = () => {
                 name="fullName"
                 required
                 value={formState.fullName}
+<<<<<<< HEAD
                 onChange={(e) => setFormState({ ...formState, fullName: e.target.value })}
+=======
+                onChange={(e) =>
+                  setFormState({ ...formState, fullName: e.target.value })
+                }
+>>>>>>> e0242ca (updating onbording page)
                 className="input input-bordered w-full"
                 placeholder="Your full name"
               />
@@ -192,9 +232,17 @@ const OnboardingPage = () => {
                 type="tel"
                 name="phoneNumber"
                 value={formState.phoneNumber}
+<<<<<<< HEAD
                 onChange={(e) => setFormState({ ...formState, phoneNumber: e.target.value })}
                 className="input input-bordered w-full"
                 placeholder="+1 234 567 8900"
+=======
+                onChange={(e) =>
+                  setFormState({ ...formState, phoneNumber: e.target.value })
+                }
+                className="input input-bordered w-full"
+                placeholder="+91 9876543210"
+>>>>>>> e0242ca (updating onbording page)
               />
             </div>
 
@@ -207,7 +255,13 @@ const OnboardingPage = () => {
                 name="bio"
                 required
                 value={formState.bio}
+<<<<<<< HEAD
                 onChange={(e) => setFormState({ ...formState, bio: e.target.value })}
+=======
+                onChange={(e) =>
+                  setFormState({ ...formState, bio: e.target.value })
+                }
+>>>>>>> e0242ca (updating onbording page)
                 className="textarea textarea-bordered h-24"
                 placeholder="Tell others about yourself and your language learning goals"
               />
@@ -218,13 +272,28 @@ const OnboardingPage = () => {
               {/* NATIVE LANGUAGE */}
               <div className="form-control">
                 <label className="label">
+<<<<<<< HEAD
                   <span className="label-text font-semibold">Native Language</span>
+=======
+                  <span className="label-text font-semibold">
+                    Native Language
+                  </span>
+>>>>>>> e0242ca (updating onbording page)
                 </label>
                 <select
                   name="nativeLanguage"
                   required
                   value={formState.nativeLanguage}
+<<<<<<< HEAD
                   onChange={(e) => setFormState({ ...formState, nativeLanguage: e.target.value })}
+=======
+                  onChange={(e) =>
+                    setFormState({
+                      ...formState,
+                      nativeLanguage: e.target.value,
+                    })
+                  }
+>>>>>>> e0242ca (updating onbording page)
                   className="select select-bordered w-full"
                 >
                   <option value="">Select your native language</option>
@@ -239,13 +308,28 @@ const OnboardingPage = () => {
               {/* LEARNING LANGUAGE */}
               <div className="form-control">
                 <label className="label">
+<<<<<<< HEAD
                   <span className="label-text font-semibold">Learning Language</span>
+=======
+                  <span className="label-text font-semibold">
+                    Learning Language
+                  </span>
+>>>>>>> e0242ca (updating onbording page)
                 </label>
                 <select
                   name="learningLanguage"
                   required
                   value={formState.learningLanguage}
+<<<<<<< HEAD
                   onChange={(e) => setFormState({ ...formState, learningLanguage: e.target.value })}
+=======
+                  onChange={(e) =>
+                    setFormState({
+                      ...formState,
+                      learningLanguage: e.target.value,
+                    })
+                  }
+>>>>>>> e0242ca (updating onbording page)
                   className="select select-bordered w-full"
                 >
                   <option value="">Select language you're learning</option>
@@ -270,7 +354,13 @@ const OnboardingPage = () => {
                   name="location"
                   required
                   value={formState.location}
+<<<<<<< HEAD
                   onChange={(e) => setFormState({ ...formState, location: e.target.value })}
+=======
+                  onChange={(e) =>
+                    setFormState({ ...formState, location: e.target.value })
+                  }
+>>>>>>> e0242ca (updating onbording page)
                   className="input input-bordered w-full pl-10"
                   placeholder="City, Country"
                 />

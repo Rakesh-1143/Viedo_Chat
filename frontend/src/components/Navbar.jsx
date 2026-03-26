@@ -4,7 +4,11 @@ import { LogOutIcon, MenuIcon, ShipWheelIcon, UserCircleIcon, SettingsIcon } fro
 import ThemeSelector from "./ThemeSelector";
 import useLogout from "../hooks/useLogout";
 
+<<<<<<< HEAD
 const Navbar = () => {
+=======
+const Navbar = ({ onMenuClick, showMenuButton = false }) => {
+>>>>>>> e0242ca (updating onbording page)
   const { authUser } = useAuthUser();
   const { logoutMutation } = useLogout();
 
@@ -12,6 +16,19 @@ const Navbar = () => {
     <nav className="bg-base-200 border-b border-base-300 sticky top-0 z-30 h-16 flex items-center">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         <div className="flex items-center gap-4">
+<<<<<<< HEAD
+=======
+          {/* MOBILE MENU BUTTON */}
+          {showMenuButton && (
+            <button 
+              onClick={onMenuClick}
+              className="btn btn-ghost btn-circle lg:hidden"
+            >
+              <MenuIcon className="size-6" />
+            </button>
+          )}
+
+>>>>>>> e0242ca (updating onbording page)
           {/* LOGO */}
           <Link to="/" className="flex items-center gap-2.5">
             <ShipWheelIcon className="size-8 text-primary" />

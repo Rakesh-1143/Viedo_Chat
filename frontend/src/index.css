@@ -8,7 +8,11 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
+<<<<<<< HEAD
   overflow: hidden;
+=======
+  overflow-y: auto;
+>>>>>>> e0242ca (updating onbording page)
 }
 
 .str-chat__channel {
