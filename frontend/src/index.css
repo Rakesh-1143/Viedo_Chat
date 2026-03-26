@@ -1,0 +1,63 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: light, dark, cupcake, bumblebee, emerald, corporate, synthwave, retro, cyberpunk, valentine, halloween, garden, forest, aqua, lofi, pastel, fantasy, wireframe, black, luxury, dracula, cmyk, autumn, business, acid, lemonade, night, coffee, winter, dim, nord, sunset;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.str-chat__channel {
+  display: flex;
+  height: 100%;
+}
+
+.str-chat__container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.str-chat__list {
+  background-color: var(--fallback-b1, oklch(var(--b1)));
+  padding: 12px;
+  padding-bottom: 30px;
+}
+
+.str-chat__list-notifications {
+  display: none;
+}
+
+.str-chat__date-separator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 0;
+  border: none;
+  background: transparent;
+}
+
+.str-chat__date-separator-date {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background-color: var(--fallback-b2, oklch(var(--b2)));
+  color: var(--fallback-bc, oklch(var(--bc)));
+  opacity: 0.8;
+  text-transform: capitalize;
+}
+
+.str-chat__date-separator-line {
+  display: none;
+}
+
+.str-chat__message-input {
+  border-top: 1px solid rgba(0,0,0,0.1);
+  padding-bottom: 24px;
+  background-color: transparent;
+}
