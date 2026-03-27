@@ -168,10 +168,7 @@ export const LANGUAGES = [
   "French",
   "German",
   "Mandarin",
-<<<<<<< HEAD
-=======
   "Odia",
->>>>>>> e0242ca (updating onbording page)
   "Japanese",
   "Korean",
   "Hindi",
@@ -180,10 +177,7 @@ export const LANGUAGES = [
   "Arabic",
   "Italian",
   "Turkish",
-<<<<<<< HEAD
-=======
   "Telugu",
->>>>>>> e0242ca (updating onbording page)
   "Dutch",
 ];
 
@@ -196,6 +190,8 @@ export const LANGUAGE_TO_FLAG = {
   japanese: "jp",
   korean: "kr",
   hindi: "in",
+  odia: "in",
+  telugu: "in",
   russian: "ru",
   portuguese: "pt",
   arabic: "sa",
