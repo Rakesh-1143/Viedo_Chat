@@ -6,6 +6,7 @@ import {
   ShipWheelIcon,
   UsersIcon,
   SearchIcon,
+  XIcon,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -17,11 +18,7 @@ import { useEffect, useState } from "react";
 import { connectStreamUser, streamClient } from "../lib/stream";
 import { useNavigationStore } from "../store/useNavigationStore";
 
-<<<<<<< HEAD
-const Sidebar = () => {
-=======
 const Sidebar = ({ onClose }) => {
->>>>>>> e0242ca (updating onbording page)
   const { authUser } = useAuthUser();
   const location = useLocation();
   const navigate = useNavigate();
@@ -29,15 +26,12 @@ const Sidebar = ({ onClose }) => {
 
   const { setHomeView, homeView } = useNavigationStore();
 
-<<<<<<< HEAD
-=======
   const handleNavigation = (view) => {
     setHomeView(view);
     if (onClose) onClose();
     if (currentPath !== "/") navigate("/");
   };
 
->>>>>>> e0242ca (updating onbording page)
   const [unreadCounts, setUnreadCounts] = useState({});
   const [isRequestsOpen, setIsRequestsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -126,11 +120,11 @@ const Sidebar = ({ onClose }) => {
   }, [authUser, tokenData]);
 
   return (
-    <aside className="w-72 bg-base-200 border-r border-base-300 hidden lg:flex flex-col h-screen sticky top-0">
-      <div className="p-5 border-b border-base-300">
+    <aside className="w-full lg:w-72 bg-base-200 border-r border-base-300 flex flex-col h-screen sticky top-0">
+      <div className="p-5 border-b border-base-300 flex items-center justify-between">
         <Link 
           to="/" 
-          onClick={() => setHomeView("friends")}
+          onClick={() => handleNavigation("friends")}
           className="flex items-center gap-2.5"
         >
           <ShipWheelIcon className="size-9 text-primary" />
@@ -138,18 +132,16 @@ const Sidebar = ({ onClose }) => {
             Streamify
           </span>
         </Link>
+        {onClose && (
+          <button onClick={onClose} className="btn btn-ghost btn-circle lg:hidden">
+            <XIcon className="size-6" />
+          </button>
+        )}
       </div>
 
       <nav className="p-4 space-y-1">
         <button
-<<<<<<< HEAD
-          onClick={() => {
-            setHomeView("friends");
-            if (currentPath !== "/") navigate("/");
-          }}
-=======
           onClick={() => handleNavigation("friends")}
->>>>>>> e0242ca (updating onbording page)
           className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case ${
             currentPath === "/" && homeView === "friends" ? "btn-active" : ""
           }`}
@@ -195,12 +187,6 @@ const Sidebar = ({ onClose }) => {
               {incomingReqs.length > 0 ? (
                 <>
                   {incomingReqs.map((req) => (
-<<<<<<< HEAD
-                    <Link
-                      key={req._id}
-                      to="/notifications"
-                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-base-300 transition-colors"
-=======
                     <button
                       key={req._id}
                       onClick={() => {
@@ -208,7 +194,6 @@ const Sidebar = ({ onClose }) => {
                         navigate("/notifications");
                       }}
                       className="flex items-center w-full text-left gap-3 p-2 rounded-lg hover:bg-base-300 transition-colors"
->>>>>>> e0242ca (updating onbording page)
                     >
                       <div className="avatar">
                         <div className="w-8 rounded-full border border-base-300">
@@ -226,16 +211,6 @@ const Sidebar = ({ onClose }) => {
                           {req.sender.fullName}
                         </p>
                       </div>
-<<<<<<< HEAD
-                    </Link>
-                  ))}
-                  <Link
-                    to="/notifications"
-                    className="block text-center text-[10px] py-2 opacity-50 hover:opacity-100 transition-opacity font-bold uppercase tracking-widest"
-                  >
-                    View all requests
-                  </Link>
-=======
                     </button>
                   ))}
                   <button
@@ -247,7 +222,6 @@ const Sidebar = ({ onClose }) => {
                   >
                     View all requests
                   </button>
->>>>>>> e0242ca (updating onbording page)
                 </>
               ) : (
                 <div className="mt-2 ml-6 text-[10px] opacity-50 italic py-2">
@@ -260,14 +234,7 @@ const Sidebar = ({ onClose }) => {
 
         {/* MEET NEW LEARNERS BUTTON */}
         <button
-<<<<<<< HEAD
-          onClick={() => {
-            setHomeView("discover");
-            if (currentPath !== "/") navigate("/");
-          }}
-=======
           onClick={() => handleNavigation("discover")}
->>>>>>> e0242ca (updating onbording page)
           className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case relative ${
             currentPath === "/" && homeView === "discover" ? "btn-active" : ""
           }`}
@@ -324,12 +291,6 @@ const Sidebar = ({ onClose }) => {
               const unreadCount = unreadCounts[channelId] || 0;
 
               return (
-<<<<<<< HEAD
-                <Link
-                  key={friend._id}
-                  to={`/chat/${friend._id}`}
-                  className={`flex items-center gap-3 p-2 rounded-lg hover:bg-base-300 transition-colors ${
-=======
                 <button
                   key={friend._id}
                   onClick={() => {
@@ -337,7 +298,6 @@ const Sidebar = ({ onClose }) => {
                     navigate(`/chat/${friend._id}`);
                   }}
                   className={`flex items-center w-full text-left gap-3 p-2 rounded-lg hover:bg-base-300 transition-colors ${
->>>>>>> e0242ca (updating onbording page)
                     currentPath === `/chat/${friend._id}` ? "bg-base-300" : ""
                   }`}
                 >
@@ -362,11 +322,7 @@ const Sidebar = ({ onClose }) => {
                       {unreadCount}
                     </div>
                   )}
-<<<<<<< HEAD
-                </Link>
-=======
                 </button>
->>>>>>> e0242ca (updating onbording page)
               );
             })
           )}
