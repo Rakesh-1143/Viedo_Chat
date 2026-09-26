@@ -51,13 +51,13 @@ const NotificationsPage = () => {
                       className="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
                     >
                       <div className="card-body p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="avatar w-14 h-14 rounded-full bg-base-300">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="avatar w-14 h-14 rounded-full bg-base-300 shrink-0">
                               <img src={request.sender.profilePic} alt={request.sender.fullName} />
                             </div>
-                            <div>
-                              <h3 className="font-semibold">{request.sender.fullName}</h3>
+                            <div className="min-w-0">
+                              <h3 className="font-semibold truncate">{request.sender.fullName}</h3>
                               <div className="flex flex-wrap gap-1.5 mt-1">
                                 <span className="badge badge-secondary badge-sm">
                                   Native: {request.sender.nativeLanguage}
@@ -70,7 +70,7 @@ const NotificationsPage = () => {
                           </div>
 
                           <button
-                            className="btn btn-primary btn-sm"
+                            className="btn btn-primary btn-sm shrink-0 w-full sm:w-auto"
                             onClick={() => acceptRequestMutation(request._id)}
                             disabled={isPending}
                           >
@@ -97,25 +97,27 @@ const NotificationsPage = () => {
                     <div key={notification._id} className="card bg-base-200 shadow-sm">
                       <div className="card-body p-4">
                         <div className="flex items-start gap-3">
-                          <div className="avatar mt-1 size-10 rounded-full">
+                          <div className="avatar mt-1 size-10 rounded-full shrink-0">
                             <img
                               src={notification.recipient.profilePic}
                               alt={notification.recipient.fullName}
                             />
                           </div>
-                          <div className="flex-1">
-                            <h3 className="font-semibold">{notification.recipient.fullName}</h3>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold truncate">{notification.recipient.fullName}</h3>
                             <p className="text-sm my-1">
                               {notification.recipient.fullName} accepted your friend request
                             </p>
-                            <p className="text-xs flex items-center opacity-70">
-                              <ClockIcon className="h-3 w-3 mr-1" />
-                              Recently
-                            </p>
-                          </div>
-                          <div className="badge badge-success">
-                            <MessageSquareIcon className="h-3 w-3 mr-1" />
-                            New Friend
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <p className="text-xs flex items-center opacity-70">
+                                <ClockIcon className="h-3 w-3 mr-1" />
+                                Recently
+                              </p>
+                              <div className="badge badge-success shrink-0">
+                                <MessageSquareIcon className="h-3 w-3 mr-1" />
+                                New Friend
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>

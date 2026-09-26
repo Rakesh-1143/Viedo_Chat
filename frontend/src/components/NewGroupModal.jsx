@@ -114,7 +114,7 @@ const NewGroupModal = ({ onClose }) => {
                     <div className="avatar size-8 rounded-full overflow-hidden bg-base-300 shrink-0">
                       <img src={friend.profilePic} alt="" />
                     </div>
-                    <span className="text-sm font-medium truncate">{friend.fullName}</span>
+                    <span className="text-sm font-medium truncate min-w-0 flex-1">{friend.fullName}</span>
                   </label>
                 ))}
               </div>
