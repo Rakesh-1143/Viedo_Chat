@@ -1,6 +1,6 @@
 import { PhoneIcon, VideoIcon } from "lucide-react";
 
-const CallButton = ({ disabled, onStartCall, pendingMode }) => (
+const CallButton = ({ disabled, onStartCall, pendingMode, disabledReason }) => (
   <div className="conversation-call-actions" aria-label="Call options">
     <button
       type="button"
@@ -8,7 +8,7 @@ const CallButton = ({ disabled, onStartCall, pendingMode }) => (
       onClick={() => onStartCall("audio")}
       disabled={disabled || Boolean(pendingMode)}
       aria-label="Start audio call"
-      title="Start audio call"
+      title={disabled && disabledReason ? disabledReason : "Start audio call"}
     >
       {pendingMode === "audio" ? (
         <span className="loading loading-spinner loading-xs" />
@@ -22,7 +22,7 @@ const CallButton = ({ disabled, onStartCall, pendingMode }) => (
       onClick={() => onStartCall("video")}
       disabled={disabled || Boolean(pendingMode)}
       aria-label="Start video call"
-      title="Start video call"
+      title={disabled && disabledReason ? disabledReason : "Start video call"}
     >
       {pendingMode === "video" ? (
         <span className="loading loading-spinner loading-xs" />

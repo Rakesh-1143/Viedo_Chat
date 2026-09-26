@@ -111,7 +111,15 @@ const ChatPage = ({ id: propId }) => {
 
   const startCall = useCallback(
     async (mode) => {
-      if (!videoClient || !videoReady || !channel || !authUser || !targetUserId) {
+      if (!videoClient || !channel || !authUser || !targetUserId) {
+        toast.error("Calling is still connecting. Please try again in a moment.");
+        return;
+      }
+      if (videoError) {
+        toast.error(getCallErrorMessage(videoError));
+        return;
+      }
+      if (!videoReady) {
         toast.error("Calling is still connecting. Please try again in a moment.");
         return;
       }
@@ -172,7 +180,7 @@ const ChatPage = ({ id: propId }) => {
         setPendingMode(null);
       }
     },
-    [authUser, channel, navigate, targetUserId, videoClient, videoReady],
+    [authUser, channel, navigate, targetUserId, videoClient, videoReady, videoError],
   );
 
   const queryError = tokenError || conversationError || setupError;
@@ -239,7 +247,10 @@ const ChatPage = ({ id: propId }) => {
                 <StarIcon aria-hidden="true" />
               </button>
               <CallButton
-                disabled={!videoClient || !videoReady || Boolean(videoError)}
+                disabled={!videoClient || (!videoReady && !videoError)}
+                disabledReason={
+                  !videoClient || (!videoReady && !videoError) ? "Connecting..." : null
+                }
                 onStartCall={startCall}
                 pendingMode={pendingMode}
               />

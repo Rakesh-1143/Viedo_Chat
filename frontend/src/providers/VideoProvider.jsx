@@ -160,7 +160,7 @@ export const VideoProvider = ({ authUser, children }) => {
     });
     const timeoutId = window.setTimeout(() => {
       setConnectionState((prev) => ({ ...prev, client, timedOut: true }));
-    }, 10_000);
+    }, 6_000);
 
     return () => {
       subscription.unsubscribe();
