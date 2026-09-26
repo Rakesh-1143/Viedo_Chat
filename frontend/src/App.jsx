@@ -14,6 +14,7 @@ const NotificationsPage = lazy(() => import("./pages/NotificationsPage.jsx"));
 const CallPage = lazy(() => import("./pages/CallPage.jsx"));
 const CallHistoryPage = lazy(() => import("./pages/CallHistoryPage.jsx"));
 const ChatPage = lazy(() => import("./pages/ChatPage.jsx"));
+const GroupChatPage = lazy(() => import("./pages/GroupChatPage.jsx"));
 const OnboardingPage = lazy(() => import("./pages/OnboardingPage.jsx"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage.jsx"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage.jsx"));
@@ -112,6 +113,19 @@ const AppRoutes = ({ isAuthenticated, hasCompletedOnboarding }) => (
           >
             <Layout showSidebar>
               <CallHistoryPage />
+            </Layout>
+          </ProtectedPage>
+        }
+      />
+      <Route
+        path="/chat/group/:channelId"
+        element={
+          <ProtectedPage
+            isAuthenticated={isAuthenticated}
+            hasCompletedOnboarding={hasCompletedOnboarding}
+          >
+            <Layout showSidebar>
+              <GroupChatPage />
             </Layout>
           </ProtectedPage>
         }

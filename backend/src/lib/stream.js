@@ -34,6 +34,18 @@ export const createDirectChannel = async (channelId, memberIds) => {
   return channel;
 };
 
+export const createGroupChannel = async (channelId, memberIds, { name, createdBy }) => {
+  if (!streamClient) throw new Error("Stream service is not configured");
+  const channel = streamClient.channel("messaging", channelId, {
+    members: memberIds.map(String),
+    name,
+    created_by_id: String(createdBy),
+    is_group: true,
+  });
+  await channel.create();
+  return channel;
+};
+
 export const deleteStreamUser = async (userId) => {
   if (!streamClient) return;
   await streamClient.deleteUser(String(userId), {

@@ -440,6 +440,19 @@ textarea:focus-visible {
   background: var(--color-base-200);
 }
 
+.conversation-avatar--group {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-primary) 15%, var(--color-base-200));
+  color: var(--color-primary);
+}
+
+.conversation-avatar--group svg {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
 .conversation-call-actions {
   display: flex;
   flex: 0 0 auto;
@@ -487,6 +500,147 @@ textarea:focus-visible {
 .chat-workspace .str-chat__date-separator-line,
 .chat-workspace .str-chat__list-notifications {
   display: none;
+}
+
+/* Starred messages */
+.starred-panel {
+  position: fixed;
+  z-index: 90;
+  inset: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.starred-panel__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgb(9 13 18 / 45%);
+  cursor: pointer;
+}
+
+.starred-panel__content {
+  position: relative;
+  display: flex;
+  width: min(100%, 24rem);
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-left: 1px solid var(--color-base-300);
+  background: var(--color-base-100);
+  box-shadow: var(--elevation-3);
+}
+
+.starred-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-base-300);
+}
+
+.starred-panel__header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.starred-panel__empty {
+  margin: 2rem 1.25rem;
+  color: color-mix(in srgb, var(--color-base-content) 60%, transparent);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.starred-panel__list {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0.5rem;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.starred-panel__item {
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.65rem;
+  margin-bottom: 0.5rem;
+  background: var(--color-base-200);
+}
+
+.starred-panel__meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.starred-panel__author {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.starred-panel__time {
+  color: color-mix(in srgb, var(--color-base-content) 55%, transparent);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.starred-panel__text {
+  margin: 0 0 0.5rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.starred-panel__unstar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 0;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.starred-panel__unstar svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  fill: currentColor;
+}
+
+/* Generic centered dialog (used instead of daisyUI's modal, whose div-based
+   .modal-open toggle does not reliably stack above page content here) */
+.app-dialog {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.app-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgb(9 13 18 / 45%);
+  cursor: pointer;
+}
+
+.app-dialog__box {
+  position: relative;
+  width: min(100%, 32rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: 1.5rem;
+  border-radius: var(--radius-box);
+  background: var(--color-base-100);
+  box-shadow: var(--elevation-3);
 }
 
 .conversation-state {

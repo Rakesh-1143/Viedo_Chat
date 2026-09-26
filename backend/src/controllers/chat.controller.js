@@ -3,9 +3,14 @@ import mongoose from "mongoose";
 import User from "../models/Users.js";
 import {
   createDirectChannel,
+  createGroupChannel,
   generateStreamToken,
   isStreamConfigured,
 } from "../lib/stream.js";
+import { cleanText } from "../utils/validation.js";
+
+const MIN_GROUP_MEMBERS = 2;
+const MAX_GROUP_MEMBERS = 50;
 
 export async function getStreamToken(req, res) {
   try {
@@ -49,6 +54,46 @@ export async function getDirectConversation(req, res) {
   } catch (error) {
     console.error("Error creating direct conversation", error.message);
     return res.status(500).json({ message: "Could not open this conversation" });
+  }
+}
+
+export async function createGroup(req, res) {
+  try {
+    if (!isStreamConfigured()) {
+      return res.status(503).json({ message: "Real-time service is not configured" });
+    }
+
+    const name = cleanText(req.body?.name, 80);
+    if (!name) {
+      return res.status(400).json({ message: "A group name is required" });
+    }
+
+    const rawMemberIds = Array.isArray(req.body?.memberIds) ? req.body.memberIds : [];
+    const memberIds = [...new Set(rawMemberIds.map(String))].filter((id) =>
+      mongoose.isValidObjectId(id),
+    );
+
+    if (memberIds.length < MIN_GROUP_MEMBERS) {
+      return res.status(400).json({ message: "Pick at least two friends to start a group" });
+    }
+    if (memberIds.length > MAX_GROUP_MEMBERS) {
+      return res.status(400).json({ message: "A group can have at most 50 other members" });
+    }
+
+    const friendIds = new Set(req.user.friends.map(String));
+    const allFriends = memberIds.every((id) => friendIds.has(id));
+    if (!allFriends) {
+      return res.status(403).json({ message: "You can only add your connections to a group" });
+    }
+
+    const channelId = `group-${randomUUID()}`;
+    const allMemberIds = [String(req.user._id), ...memberIds];
+    await createGroupChannel(channelId, allMemberIds, { name, createdBy: req.user._id });
+
+    return res.status(201).json({ channelId, name });
+  } catch (error) {
+    console.error("Error creating group chat", error.message);
+    return res.status(500).json({ message: "Could not create this group" });
   }
 }
 
