@@ -169,7 +169,7 @@ const OnboardingPage = () => {
               />
 
               {/* ACTION BUTTONS */}
-              <div className="flex gap-2">
+              <div className="flex flex-wrap justify-center gap-2">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}

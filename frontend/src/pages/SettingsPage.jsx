@@ -73,9 +73,9 @@ const SettingsPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* SIDEBAR TABS */}
-        <div className="md:col-span-1 space-y-1">
+        <div className="lg:col-span-1 space-y-1">
           <button
             onClick={() => setActiveTab("password")}
             className={`btn btn-ghost w-full justify-start gap-3 ${activeTab === "password" ? "btn-active" : ""}`}
@@ -101,7 +101,7 @@ const SettingsPage = () => {
         </div>
 
         {/* CONTENT AREA */}
-        <div className="md:col-span-3 card bg-base-200 shadow-sm border border-base-300">
+        <div className="lg:col-span-3 card bg-base-200 shadow-sm border border-base-300">
           <div className="card-body">
             {activeTab === "password" && (
               <div className="space-y-6 animate-in fade-in duration-300">
