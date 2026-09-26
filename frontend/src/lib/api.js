@@ -87,6 +87,11 @@ export async function authorizeDirectCall(userId) {
   return response.data;
 }
 
+export async function createGroupChat({ name, memberIds }) {
+  const response = await axiosInstance.post("/chat/group", { name, memberIds });
+  return response.data;
+}
+
 export async function logCallStart(payload) {
   const response = await axiosInstance.post("/calls", payload);
   return response.data;

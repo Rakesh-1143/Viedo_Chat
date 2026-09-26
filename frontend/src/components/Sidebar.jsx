@@ -4,6 +4,7 @@ import {
   BellIcon,
   HomeIcon,
   PhoneIcon,
+  PlusIcon,
   ShipWheelIcon,
   UsersIcon,
   SearchIcon,
@@ -19,6 +20,7 @@ import {
 import { useEffect, useState } from "react";
 import { connectStreamUser, streamClient } from "../lib/stream";
 import { useNavigationStore } from "../store/useNavigationStore";
+import NewGroupModal from "./NewGroupModal";
 
 const Sidebar = ({ onClose }) => {
   const { authUser } = useAuthUser();
@@ -36,8 +38,10 @@ const Sidebar = ({ onClose }) => {
 
   const [unreadCounts, setUnreadCounts] = useState({});
   const [onlineUserIds, setOnlineUserIds] = useState(() => new Set());
+  const [groups, setGroups] = useState([]);
   const [isRequestsOpen, setIsRequestsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showNewGroup, setShowNewGroup] = useState(false);
 
   const { data: friends = [], isLoading: loadingFriends } = useQuery({
     queryKey: ["friends"],
@@ -118,14 +122,23 @@ const Sidebar = ({ onClose }) => {
 
         const counts = {};
         const onlineIds = new Set();
+        const groupChannels = [];
         channels.forEach((c) => {
           counts[c.id] = c.countUnread();
           Object.values(c.state.members || {}).forEach((member) => {
             if (member.user?.online) onlineIds.add(String(member.user.id));
           });
+          if (c.data?.is_group) {
+            groupChannels.push({
+              id: c.id,
+              name: c.data?.name || "Group",
+              memberCount: Object.keys(c.state.members || {}).length,
+            });
+          }
         });
         setUnreadCounts(counts);
         setOnlineUserIds(onlineIds);
+        setGroups(groupChannels);
 
         streamClient.on(handleEvent);
       } catch (error) {
@@ -142,7 +155,7 @@ const Sidebar = ({ onClose }) => {
   }, [authUser, tokenData?.token]);
 
   return (
-    <aside className="sticky top-0 flex h-screen w-full flex-col border-r border-base-300 bg-base-100 lg:w-72">
+    <aside className="sticky top-0 flex h-screen w-full flex-col border-r border-base-300 bg-base-200/40 lg:w-72">
       <div className="p-5 border-b border-base-300 flex items-center justify-between">
         <Link 
           to="/" 
@@ -275,6 +288,15 @@ const Sidebar = ({ onClose }) => {
           <PhoneIcon className="size-5 text-base-content opacity-70" />
           <span>Call History</span>
         </button>
+
+        {/* NEW GROUP BUTTON */}
+        <button
+          onClick={() => setShowNewGroup(true)}
+          className="btn btn-ghost justify-start w-full gap-3 px-3 normal-case relative"
+        >
+          <PlusIcon className="size-5 text-base-content opacity-70" />
+          <span>New Group</span>
+        </button>
       </nav>
 
       {/* FRIENDS SECTION */}
@@ -332,8 +354,10 @@ const Sidebar = ({ onClose }) => {
                     if (onClose) onClose();
                     navigate(`/chat/${friend._id}`);
                   }}
-                  className={`flex items-center w-full text-left gap-3 p-2 rounded-lg hover:bg-base-300 transition-colors ${
-                    currentPath === `/chat/${friend._id}` ? "bg-base-300" : ""
+                  className={`flex items-center w-full text-left gap-3 p-2 rounded-lg transition-colors ${
+                    currentPath === `/chat/${friend._id}`
+                      ? "bg-primary/10 shadow-[inset_3px_0_0_var(--color-primary)]"
+                      : "hover:bg-base-300"
                   }`}
                 >
                   <div className="avatar relative">
@@ -369,6 +393,55 @@ const Sidebar = ({ onClose }) => {
             })
           )}
         </div>
+
+        {/* GROUPS SECTION */}
+        {groups.length > 0 && (
+          <>
+            <div className="flex items-center justify-between px-2 py-3 mt-2 text-xs font-semibold text-base-content/50 uppercase tracking-wider">
+              <div className="flex items-center gap-2">
+                <UsersIcon className="size-4" />
+                Groups
+              </div>
+              <span className="badge badge-ghost badge-sm">{groups.length}</span>
+            </div>
+            <div className="space-y-1">
+              {groups.map((group) => {
+                const unreadCount = unreadCounts[group.id] || 0;
+                const isActive = currentPath === `/chat/group/${group.id}`;
+
+                return (
+                  <button
+                    key={group.id}
+                    onClick={() => {
+                      if (onClose) onClose();
+                      navigate(`/chat/group/${group.id}`);
+                    }}
+                    className={`flex items-center w-full text-left gap-3 p-2 rounded-lg transition-colors ${
+                      isActive
+                        ? "bg-primary/10 shadow-[inset_3px_0_0_var(--color-primary)]"
+                        : "hover:bg-base-300"
+                    }`}
+                  >
+                    <div className="avatar placeholder">
+                      <div className="w-10 rounded-full bg-primary/15 text-primary">
+                        <UsersIcon className="size-4" aria-hidden="true" />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{group.name}</p>
+                      <p className="text-xs opacity-50">{group.memberCount} members</p>
+                    </div>
+                    {unreadCount > 0 && (
+                      <div className="badge badge-primary badge-sm font-bold">
+                        {unreadCount}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
 
       {/* USER PROFILE SECTION */}
@@ -396,6 +469,8 @@ const Sidebar = ({ onClose }) => {
           </div>
         </div>
       </div>
+
+      {showNewGroup && <NewGroupModal onClose={() => setShowNewGroup(false)} />}
     </aside>
   );
 };

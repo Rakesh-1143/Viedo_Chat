@@ -15,7 +15,7 @@ const Navbar = ({ onMenuClick, showMenuButton = false }) => {
   const { logoutMutation, isPending } = useLogout();
 
   return (
-    <nav className="sticky top-0 z-30 flex h-16 flex-none items-center border-b border-base-300 bg-base-100">
+    <nav className="sticky top-0 z-30 flex h-16 flex-none items-center border-b border-base-300 bg-base-100/90 shadow-[0_1px_2px_rgba(15,23,42,0.05)] backdrop-blur supports-[backdrop-filter]:bg-base-100/75">
       <div className="flex w-full items-center justify-between px-3 sm:px-5">
         <div className="flex items-center gap-2">
           {showMenuButton && (

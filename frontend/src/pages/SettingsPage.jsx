@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteAccount, updatePassword } from "../lib/api";
 import { streamClient } from "../lib/stream";
@@ -66,7 +67,10 @@ const SettingsPage = () => {
     <div className="container mx-auto max-w-4xl p-4 sm:p-6 lg:p-8">
       <div className="flex items-center gap-3 mb-8">
         <SettingsIcon className="size-8 text-primary" />
-        <h1 className="text-3xl font-bold">Settings</h1>
+        <div>
+          <p className="page-kicker mb-0">Account</p>
+          <h1 className="text-3xl font-bold">Settings</h1>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -232,9 +236,19 @@ const SettingsPage = () => {
       </div>
 
       {/* DELETE ACCOUNT MODAL */}
-      {isDeleteModalOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box">
+      {isDeleteModalOpen &&
+        createPortal(
+          <div className="app-dialog" role="dialog" aria-modal="true" aria-label="Delete account">
+            <button
+              type="button"
+              className="app-dialog__backdrop"
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                setDeleteReason("");
+              }}
+              aria-label="Close"
+            />
+            <div className="app-dialog__box">
             <h3 className="font-bold text-lg text-error flex items-center gap-2">
               <Trash2Icon className="size-6" />
               Delete Account Permanently?
@@ -276,9 +290,10 @@ const SettingsPage = () => {
                 {isDeleting ? "Deleting..." : "Delete Permanently"}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };

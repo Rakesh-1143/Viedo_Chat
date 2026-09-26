@@ -11,7 +11,7 @@ import {
   Window,
 } from "stream-chat-react";
 import toast from "react-hot-toast";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, StarIcon } from "lucide-react";
 import useAuthUser from "../hooks/useAuthUser";
 import {
   authorizeDirectCall,
@@ -19,8 +19,10 @@ import {
   getStreamToken,
   logCallStart,
 } from "../lib/api";
+import { formatLastSeen } from "../lib/utils";
 import ChatLoader from "../components/ChatLoader";
 import CallButton from "../components/CallButton";
+import StarredMessagesPanel from "../components/StarredMessagesPanel";
 import { connectStreamUser, streamClient } from "../lib/stream";
 import { useVideoClient } from "../providers/videoContext";
 
@@ -33,7 +35,9 @@ const ChatPage = ({ id: propId }) => {
   const [channel, setChannel] = useState(null);
   const [setupError, setSetupError] = useState(null);
   const [isOnline, setIsOnline] = useState(false);
+  const [lastActiveAt, setLastActiveAt] = useState(null);
   const [pendingMode, setPendingMode] = useState(null);
+  const [showStarred, setShowStarred] = useState(false);
 
   const {
     data: tokenData,
@@ -79,11 +83,13 @@ const ChatPage = ({ id: propId }) => {
         if (disposed) return;
         const member = activeChannel.state.members?.[String(targetUserId)];
         setIsOnline(Boolean(member?.user?.online));
+        setLastActiveAt(member?.user?.last_active || null);
         setChannel(activeChannel);
 
         presenceSubscription = streamClient.on("user.presence.changed", (event) => {
           if (String(event.user?.id) === String(targetUserId)) {
             setIsOnline(Boolean(event.user?.online));
+            setLastActiveAt(event.user?.last_active || null);
           }
         });
       } catch (error) {
@@ -219,9 +225,18 @@ const ChatPage = ({ id: propId }) => {
                 </div>
                 <div>
                   <h1>{targetUser.fullName}</h1>
-                  <p>{isOnline ? "Online" : "Offline"}</p>
+                  <p>{isOnline ? "Online" : lastActiveAt ? formatLastSeen(lastActiveAt) : "Offline"}</p>
                 </div>
               </div>
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => setShowStarred(true)}
+                aria-label="Starred messages"
+                title="Starred messages"
+              >
+                <StarIcon aria-hidden="true" />
+              </button>
               <CallButton
                 disabled={!videoClient || Boolean(videoError)}
                 onStartCall={startCall}
@@ -230,11 +245,14 @@ const ChatPage = ({ id: propId }) => {
             </header>
             <MessageList />
             <TypingIndicator />
-            <MessageInput focus />
+            <MessageInput focus audioRecordingEnabled />
           </Window>
           <Thread />
         </Channel>
       </Chat>
+      {showStarred && (
+        <StarredMessagesPanel channel={channel} onClose={() => setShowStarred(false)} />
+      )}
     </div>
   );
 };

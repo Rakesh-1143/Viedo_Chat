@@ -134,6 +134,7 @@ const HomePage = () => {
             <div className="mb-8">
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-1">
+                  <p className="page-kicker">Discover</p>
                   <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
                     Make New Connections
                   </h2>
