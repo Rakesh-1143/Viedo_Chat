@@ -4,6 +4,7 @@ export const VideoClientContext = createContext({
   client: null,
   error: null,
   isLoading: false,
+  isReady: false,
 });
 
 export const useVideoClient = () => useContext(VideoClientContext);
