@@ -1,38 +1,52 @@
-import express from "express";
 import "dotenv/config";
-import authRoutes from "./routes/auth.route.js";
-import userRoutes from "./routes/user.router.js";
-import chatRoutes from "./routes/chat.route.js";
+import mongoose from "mongoose";
 import connectDB from "./lib/db.js";
-import cors from "cors";
-import path from "path"
-// import dotenv from "dotenv";
-// dotenv.config()
-import cookieParser from "cookie-parser";
-const app = express();
+import { createApp } from "./app.js";
+import { assertRequiredEnvironment } from "./config/env.js";
 
 const PORT = process.env.PORT || 5001;
-const __dirname =path.resolve()
 
-app.use(cors({
-  origin: "http://localhost:5173",
-  credentials: true,
-}));
-app.use(express.json({ limit: "5mb" }));
-app.use(cookieParser());
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/chat", chatRoutes);
+const startServer = async () => {
+  try {
+    assertRequiredEnvironment();
+    await connectDB();
 
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+    const app = createApp();
+    const server = app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
 
-  app.get("*", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "../frontend", "dist", "index.html"));
-  });
-}
+    let isShuttingDown = false;
+    const shutdown = (signal) => {
+      if (isShuttingDown) return;
+      isShuttingDown = true;
+      console.log(`${signal} received. Closing HTTP server.`);
+      const forceExit = setTimeout(() => {
+        console.error("Graceful shutdown timed out.");
+        process.exit(1);
+      }, 10_000);
+      forceExit.unref();
 
-app.listen(PORT, () => {
-  console.log(`Server is running on Port ${PORT}`);
-  connectDB();
-});
+      server.close(async (serverError) => {
+        let exitCode = serverError ? 1 : 0;
+        try {
+          await mongoose.disconnect();
+        } catch (error) {
+          exitCode = 1;
+          console.error("MongoDB shutdown failed:", error.message);
+        } finally {
+          clearTimeout(forceExit);
+          process.exit(exitCode);
+        }
+      });
+    };
+
+    process.once("SIGTERM", () => shutdown("SIGTERM"));
+    process.once("SIGINT", () => shutdown("SIGINT"));
+  } catch (error) {
+    console.error("Server failed to start:", error.message);
+    process.exit(1);
+  }
+};
+
+startServer();

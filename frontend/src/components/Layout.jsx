@@ -6,7 +6,7 @@ const Layout = ({ children, showSidebar = false }) => {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   return (
-    <div className="h-screen flex overflow-hidden relative">
+    <div className="relative flex h-screen min-h-[100dvh] overflow-hidden">
       {/* SIDEBAR - DESKTOP (STAYS AS IS) & MOBILE (HIDDEN BY DEFAULT) */}
       {showSidebar && (
         <>
@@ -17,14 +17,16 @@ const Layout = ({ children, showSidebar = false }) => {
 
           {/* Mobile Sidebar Overlay */}
           {isMobileSidebarOpen && (
-            <div 
-              className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            <button
+              type="button"
+              className="fixed inset-0 z-40 bg-black/55 lg:hidden"
               onClick={() => setIsMobileSidebarOpen(false)}
+              aria-label="Close navigation"
             />
           )}
 
           {/* Mobile Sidebar Drawer */}
-          <div className={`fixed inset-y-0 left-0 z-50 transform ${isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-300 ease-in-out lg:hidden w-72 bg-base-100`}>
+          <div className={`fixed inset-y-0 left-0 z-50 w-72 transform bg-base-100 transition-transform duration-200 ease-out lg:hidden ${isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
             <Sidebar onClose={() => setIsMobileSidebarOpen(false)} />
           </div>
         </>

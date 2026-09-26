@@ -6,7 +6,7 @@ import {
   getUserFriends,
   sendFriendRequest,
 } from "../lib/api";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
 import {
   CheckCircleIcon,
   MapPinIcon,
@@ -25,7 +25,6 @@ import ChatPage from "./ChatPage";
 
 const HomePage = () => {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const { homeView, setHomeView } = useNavigationStore();
   const [searchQuery, setSearchQuery] = useState("");
   const observer = useRef();
@@ -115,7 +114,7 @@ const HomePage = () => {
         className={
           homeView === "friends" && friends.length > 0
             ? "h-full"
-            : "container mx-auto p-4 sm:p-6 lg:p-8 space-y-10"
+            : "container mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 space-y-10"
         }
       >
         {homeView === "friends" && (

@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { logout } from "../lib/api";
+import { streamClient } from "../lib/stream";
 
 const useLogout = () => {
   const queryClient = useQueryClient();
@@ -10,9 +11,14 @@ const useLogout = () => {
     error,
   } = useMutation({
     mutationFn: logout,
-    onSuccess: () => {
+    onSuccess: async () => {
+      if (streamClient?.userID) {
+        await streamClient.disconnectUser().catch((disconnectError) => {
+          console.error("Failed to close the chat connection", disconnectError);
+        });
+      }
       queryClient.removeQueries();
-      window.location.href = "/login";
+      window.location.assign("/login");
     },
   });
 

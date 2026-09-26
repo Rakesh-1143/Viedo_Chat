@@ -1,113 +1,503 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router";
-import useAuthUser from "../hooks/useAuthUser";
-import { useQuery } from "@tanstack/react-query";
-import { getStreamToken } from "../lib/api";
-
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import {
-  StreamVideo,
-  StreamVideoClient,
-  StreamCall,
-  CallControls,
-  SpeakerLayout,
-  StreamTheme,
   CallingState,
+  PaginatedGridLayout,
+  StreamCall,
+  StreamTheme,
+  VideoPreview,
+  useCall,
   useCallStateHooks,
 } from "@stream-io/video-react-sdk";
-
-import "@stream-io/video-react-sdk/dist/css/styles.css";
+import {
+  CameraIcon,
+  CameraOffIcon,
+  FlipHorizontal2Icon,
+  MicIcon,
+  MicOffIcon,
+  MonitorUpIcon,
+  PhoneIcon,
+  PhoneOffIcon,
+  RotateCcwIcon,
+  UsersIcon,
+  WifiOffIcon,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import PageLoader from "../components/PageLoader";
+import { formatCallDuration, getCallErrorMessage, getCallMode } from "../lib/call";
+import { useVideoClient } from "../providers/videoContext";
+import "@stream-io/video-react-sdk/dist/css/styles.css";
 
-const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
+const CALL_TYPE = import.meta.env.VITE_STREAM_CALL_TYPE || "default";
+
+const useElapsedTime = (startedAt) => {
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const startTime = startedAt ? new Date(startedAt).getTime() : null;
+
+  useEffect(() => {
+    if (!startTime) return undefined;
+    const timer = window.setInterval(() => {
+      setElapsedSeconds(Math.max(0, (Date.now() - startTime) / 1000));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [startTime]);
+
+  return formatCallDuration(elapsedSeconds);
+};
 
 const CallPage = () => {
   const { id: callId } = useParams();
-  const [client, setClient] = useState(null);
-  const [call, setCall] = useState(null);
-  const [isConnecting, setIsConnecting] = useState(true);
-
-  const { authUser, isLoading } = useAuthUser();
-
-  const { data: tokenData } = useQuery({
-    queryKey: ["streamToken"],
-    queryFn: getStreamToken,
-    enabled: !!authUser,
-  });
+  const [searchParams] = useSearchParams();
+  const { client, error: clientError, isLoading } = useVideoClient();
+  const callType = searchParams.get("type") || CALL_TYPE;
+  const call = useMemo(
+    () => (client && callId ? client.call(callType, callId) : null),
+    [callId, callType, client],
+  );
+  const [loadError, setLoadError] = useState(null);
 
   useEffect(() => {
-    const initCall = async () => {
-      if (!tokenData?.token || !authUser || !callId) return;
+    if (!call) return undefined;
+    const state = call.state.callingState;
+    if (state === CallingState.UNKNOWN || state === CallingState.IDLE) {
+      call.get().catch((error) => {
+        console.error("Failed to load call", error);
+        setLoadError(error);
+      });
+    }
 
-      try {
-        console.log("Initializing Stream video client...");
-
-        const user = {
-          id: authUser._id,
-          name: authUser.fullName,
-          image: authUser.profilePic,
-        };
-
-        // Ensure we are connected to chat as well if possible, 
-        // but for video we create a new client usually as per docs
-        const videoClient = new StreamVideoClient({
-          apiKey: STREAM_API_KEY,
-          user,
-          token: tokenData.token,
-        });
-
-        const callInstance = videoClient.call("default", callId);
-
-        await callInstance.join({ create: true });
-
-        console.log("Joined call successfully");
-
-        setClient(videoClient);
-        setCall(callInstance);
-      } catch (error) {
-        console.error("Error joining call:", error);
-        toast.error("Could not join the call. Please try again.");
-      } finally {
-        setIsConnecting(false);
+    const leaveOnPageExit = () => {
+      if (call.state.callingState !== CallingState.LEFT) {
+        call.leave().catch(() => undefined);
       }
     };
+    window.addEventListener("pagehide", leaveOnPageExit);
+    return () => {
+      window.removeEventListener("pagehide", leaveOnPageExit);
+      leaveOnPageExit();
+    };
+  }, [call]);
 
-    initCall();
-  }, [tokenData, authUser, callId]);
+  if (isLoading) return <PageLoader />;
 
-  if (isLoading || isConnecting) return <PageLoader />;
+  if (!client || !call || clientError || loadError) {
+    return (
+      <CallUnavailable
+        message={
+          !import.meta.env.VITE_STREAM_API_KEY
+            ? "Video calling is not configured for this environment."
+            : getCallErrorMessage(clientError || loadError)
+        }
+      />
+    );
+  }
 
   return (
-    <div className="h-screen flex flex-col items-center justify-center">
-      <div className="relative">
-        {client && call ? (
-          <StreamVideo client={client}>
-            <StreamCall call={call}>
-              <CallContent />
-            </StreamCall>
-          </StreamVideo>
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <p>Could not initialize call. Please refresh or try again later.</p>
-          </div>
-        )}
+    <StreamCall call={call}>
+      <CallExperience />
+    </StreamCall>
+  );
+};
+
+const CallUnavailable = ({ message }) => {
+  const navigate = useNavigate();
+  return (
+    <main className="call-page call-page--centered">
+      <div className="call-empty-state">
+        <WifiOffIcon aria-hidden="true" />
+        <h1>Call unavailable</h1>
+        <p>{message}</p>
+        <button type="button" className="call-secondary-button" onClick={() => navigate("/")}>
+          Back to conversations
+        </button>
       </div>
+    </main>
+  );
+};
+
+const CallExperience = () => {
+  const call = useCall();
+  const navigate = useNavigate();
+  const { useCallCallingState } = useCallStateHooks();
+  const callingState = useCallCallingState();
+
+  if (!call) return <CallUnavailable message="The call could not be loaded." />;
+
+  if (callingState === CallingState.RINGING) {
+    return call.isCreatedByMe ? (
+      <OutgoingCall call={call} />
+    ) : (
+      <IncomingCall call={call} />
+    );
+  }
+
+  if ([CallingState.UNKNOWN, CallingState.IDLE].includes(callingState)) {
+    return <CallLobby />;
+  }
+
+  if (callingState === CallingState.JOINING) {
+    return (
+      <main className="call-page call-page--centered">
+        <div className="call-progress" role="status">
+          <span className="loading loading-spinner loading-lg" />
+          <p>Connecting your call...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (callingState === CallingState.LEFT) {
+    return (
+      <main className="call-page call-page--centered">
+        <div className="call-empty-state">
+          <PhoneOffIcon aria-hidden="true" />
+          <h1>Call ended</h1>
+          <p>Your camera and microphone have been released.</p>
+          <button type="button" className="call-secondary-button" onClick={() => navigate("/")}>
+            Return to conversations
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (callingState === CallingState.RECONNECTING_FAILED) {
+    return (
+      <main className="call-page call-page--centered">
+        <div className="call-empty-state">
+          <WifiOffIcon aria-hidden="true" />
+          <h1>Connection lost</h1>
+          <p>We could not restore this call. Check your network before trying again.</p>
+          <button type="button" className="call-secondary-button" onClick={() => navigate("/")}>
+            Leave call
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  return <ActiveCallRoom />;
+};
+
+const PersonAvatar = ({ call }) => {
+  const person = call.state.members.find(
+    ({ user }) => user.id !== call.currentUserId,
+  )?.user;
+  return (
+    <div className="call-person-avatar">
+      {person?.image ? <img src={person.image} alt="" /> : <span>{person?.name?.[0] || "?"}</span>}
     </div>
   );
 };
 
-const CallContent = () => {
-  const { useCallCallingState } = useCallStateHooks();
-  const callingState = useCallCallingState();
-
+const OutgoingCall = ({ call }) => {
   const navigate = useNavigate();
+  const [isCanceling, setIsCanceling] = useState(false);
+  const targetName = call.state.custom?.targetName || "your connection";
+  const mode = getCallMode(call);
 
-  if (callingState === CallingState.LEFT) return navigate("/");
+  const cancel = async () => {
+    setIsCanceling(true);
+    try {
+      await call.leave({ reject: true, reason: "cancel" });
+      navigate("/");
+    } catch {
+      toast.error("The call could not be canceled.");
+      setIsCanceling(false);
+    }
+  };
 
   return (
-    <StreamTheme>
-      <SpeakerLayout />
-      <CallControls />
+    <main className="call-page call-page--centered">
+      <div className="ringing-panel">
+        <PersonAvatar call={call} />
+        <p className="ringing-panel__status">Calling</p>
+        <h1>{targetName}</h1>
+        <p>{mode === "audio" ? "Audio" : "Video"} call</p>
+        <span className="ringing-pulse" aria-hidden="true" />
+        <button
+          type="button"
+          className="call-action call-action--decline"
+          onClick={cancel}
+          disabled={isCanceling}
+          aria-label="Cancel call"
+        >
+          <PhoneOffIcon aria-hidden="true" />
+        </button>
+      </div>
+    </main>
+  );
+};
+
+const IncomingCall = ({ call }) => {
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+  const caller = call.state.createdBy;
+
+  const accept = async () => {
+    setBusy(true);
+    try {
+      if (getCallMode(call) === "audio") await call.camera.disable();
+      await call.join();
+    } catch (error) {
+      toast.error(getCallErrorMessage(error));
+      setBusy(false);
+    }
+  };
+
+  const reject = async () => {
+    setBusy(true);
+    await call.leave({ reject: true, reason: "decline" }).catch(() => undefined);
+    navigate("/");
+  };
+
+  return (
+    <main className="call-page call-page--centered">
+      <div className="ringing-panel">
+        <PersonAvatar call={call} />
+        <p className="ringing-panel__status">Incoming call</p>
+        <h1>{caller?.name || "A connection"}</h1>
+        <div className="ringing-panel__actions">
+          <button className="call-action call-action--decline" onClick={reject} disabled={busy} aria-label="Decline call">
+            <PhoneOffIcon aria-hidden="true" />
+          </button>
+          <button className="call-action call-action--accept" onClick={accept} disabled={busy} aria-label="Accept call">
+            <PhoneIcon aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+    </main>
+  );
+};
+
+const CallLobby = () => {
+  const call = useCall();
+  const navigate = useNavigate();
+  const [joining, setJoining] = useState(false);
+  const [error, setError] = useState(null);
+  const { useCameraState, useMicrophoneState } = useCallStateHooks();
+  const cameraState = useCameraState();
+  const microphoneState = useMicrophoneState();
+  const mode = getCallMode(call);
+
+  const cancel = async () => {
+    await call.leave().catch(() => undefined);
+    navigate("/");
+  };
+
+  const join = async () => {
+    setJoining(true);
+    setError(null);
+    try {
+      if (mode === "audio") {
+        await cameraState.camera.disable();
+      } else {
+        await cameraState.camera.enable();
+      }
+      await microphoneState.microphone.enable();
+      await call.join();
+    } catch (joinError) {
+      setError(getCallErrorMessage(joinError));
+      setJoining(false);
+    }
+  };
+
+  return (
+    <main className="call-page call-lobby">
+      <section className="call-lobby__preview" aria-label="Camera preview">
+        {mode === "video" && !cameraState.isMute ? (
+          <VideoPreview />
+        ) : (
+          <div className="call-lobby__camera-off">
+            <CameraOffIcon aria-hidden="true" />
+            <span>Camera is off</span>
+          </div>
+        )}
+      </section>
+      <section className="call-lobby__details">
+        <p className="call-kicker">Ready to join?</p>
+        <h1>Check your camera and microphone</h1>
+        <p>You can change both again after joining.</p>
+        {error && <div className="call-error" role="alert">{error}</div>}
+        <div className="call-lobby__toggles">
+          {mode === "video" && (
+            <DeviceButton
+              active={!cameraState.isMute}
+              activeLabel="Turn camera off"
+              inactiveLabel="Turn camera on"
+              ActiveIcon={CameraIcon}
+              InactiveIcon={CameraOffIcon}
+              onClick={() => cameraState.camera.toggle()}
+            />
+          )}
+          <DeviceButton
+            active={!microphoneState.isMute}
+            activeLabel="Mute microphone"
+            inactiveLabel="Unmute microphone"
+            ActiveIcon={MicIcon}
+            InactiveIcon={MicOffIcon}
+            onClick={() => microphoneState.microphone.toggle()}
+          />
+        </div>
+        <div className="call-lobby__actions">
+          <button type="button" className="call-secondary-button" onClick={cancel}>Cancel</button>
+          <button type="button" className="call-primary-button" onClick={join} disabled={joining}>
+            {joining ? "Joining..." : "Join call"}
+          </button>
+        </div>
+      </section>
+    </main>
+  );
+};
+
+const DeviceButton = ({
+  active,
+  activeLabel,
+  inactiveLabel,
+  ActiveIcon,
+  InactiveIcon,
+  onClick,
+}) => {
+  const handleClick = async () => {
+    try {
+      await onClick();
+    } catch (error) {
+      toast.error(getCallErrorMessage(error));
+    }
+  };
+
+  const Icon = active ? ActiveIcon : InactiveIcon;
+  return (
+    <button
+      type="button"
+      className={`device-control ${active ? "" : "device-control--off"}`}
+      onClick={handleClick}
+      aria-label={active ? activeLabel : inactiveLabel}
+      title={active ? activeLabel : inactiveLabel}
+    >
+      <Icon aria-hidden="true" />
+    </button>
+  );
+};
+
+const ActiveCallRoom = () => {
+  const call = useCall();
+  const navigate = useNavigate();
+  const {
+    useCallCallingState,
+    useCallStartedAt,
+    useCameraState,
+    useMicrophoneState,
+    useParticipantCount,
+    useScreenShareState,
+  } = useCallStateHooks();
+  const callingState = useCallCallingState();
+  const startedAt = useCallStartedAt();
+  const participantCount = useParticipantCount();
+  const cameraState = useCameraState();
+  const microphoneState = useMicrophoneState();
+  const screenShareState = useScreenShareState();
+  const elapsed = useElapsedTime(startedAt);
+  const [leaving, setLeaving] = useState(false);
+  const mode = getCallMode(call);
+  const canShareScreen = Boolean(navigator.mediaDevices?.getDisplayMedia);
+  const connectionMessage = {
+    [CallingState.RECONNECTING]: "Reconnecting...",
+    [CallingState.OFFLINE]: "You are offline. The call will resume when your network returns.",
+    [CallingState.MIGRATING]: "Improving connection...",
+  }[callingState];
+
+  const leave = async () => {
+    setLeaving(true);
+    try {
+      await call.leave();
+      navigate("/");
+    } catch {
+      toast.error("The call could not close cleanly. Please try again.");
+      setLeaving(false);
+    }
+  };
+
+  const flipCamera = async () => {
+    try {
+      await cameraState.camera.flip();
+    } catch {
+      toast.error("No second camera is available on this device.");
+    }
+  };
+
+  return (
+    <StreamTheme className="streamify-call-theme">
+      <main className="call-page active-call">
+        <header className="active-call__header">
+          <div>
+            <strong>Streamify</strong>
+            <span className="active-call__live-dot" />
+            <span>{elapsed}</span>
+          </div>
+          <div className="active-call__participants">
+            <UsersIcon aria-hidden="true" />
+            <span>{participantCount}</span>
+          </div>
+        </header>
+
+        {connectionMessage && (
+          <div className="call-connection-banner" role="status">
+            {callingState === CallingState.OFFLINE ? <WifiOffIcon /> : <RotateCcwIcon />}
+            {connectionMessage}
+          </div>
+        )}
+
+        <section className="active-call__stage" aria-label="Call participants">
+          <PaginatedGridLayout />
+        </section>
+
+        {(cameraState.hasBrowserPermission === false ||
+          microphoneState.hasBrowserPermission === false) && (
+          <div className="call-permission-note" role="status">
+            A device is blocked. Use the browser address-bar permissions to enable it.
+          </div>
+        )}
+
+        <footer className="active-call__controls" aria-label="Call controls">
+          <DeviceButton
+            active={!microphoneState.isMute}
+            activeLabel="Mute microphone"
+            inactiveLabel="Unmute microphone"
+            ActiveIcon={MicIcon}
+            InactiveIcon={MicOffIcon}
+            onClick={() => microphoneState.microphone.toggle()}
+          />
+          {mode === "video" && (
+            <>
+              <DeviceButton
+                active={!cameraState.isMute}
+                activeLabel="Turn camera off"
+                inactiveLabel="Turn camera on"
+                ActiveIcon={CameraIcon}
+                InactiveIcon={CameraOffIcon}
+                onClick={() => cameraState.camera.toggle()}
+              />
+              <button type="button" className="device-control" onClick={flipCamera} aria-label="Switch camera" title="Switch camera">
+                <FlipHorizontal2Icon aria-hidden="true" />
+              </button>
+            </>
+          )}
+          {canShareScreen && (
+            <DeviceButton
+              active={!screenShareState.isMute}
+              activeLabel="Stop sharing screen"
+              inactiveLabel="Share screen"
+              ActiveIcon={MonitorUpIcon}
+              InactiveIcon={MonitorUpIcon}
+              onClick={() => screenShareState.screenShare.toggle()}
+            />
+          )}
+          <button type="button" className="device-control device-control--leave" onClick={leave} disabled={leaving} aria-label="End call" title="End call">
+            <PhoneOffIcon aria-hidden="true" />
+          </button>
+        </footer>
+      </main>
     </StreamTheme>
   );
 };

@@ -1,5 +1,10 @@
 import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router";
+import { Toaster } from "react-hot-toast";
+import Layout from "./components/Layout.jsx";
+import PageLoader from "./components/PageLoader.jsx";
+import useAuthUser from "./hooks/useAuthUser.js";
+import { useThemeStore } from "./store/useThemeStore.js";
 
 const HomePage = lazy(() => import("./pages/HomePage.jsx"));
 const SignUpPage = lazy(() => import("./pages/SignUpPage.jsx"));
@@ -9,109 +14,151 @@ const CallPage = lazy(() => import("./pages/CallPage.jsx"));
 const ChatPage = lazy(() => import("./pages/ChatPage.jsx"));
 const OnboardingPage = lazy(() => import("./pages/OnboardingPage.jsx"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage.jsx"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage.jsx"));
+const VideoProvider = lazy(() => import("./providers/VideoProvider.jsx"));
 
-import { Toaster } from "react-hot-toast";
+const ProtectedPage = ({ isAuthenticated, hasCompletedOnboarding, children }) => {
+  if (!isAuthenticated) return <Navigate to="/login" />;
+  if (!hasCompletedOnboarding) return <Navigate to="/onboarding" />;
+  return children;
+};
 
-import PageLoader from "./components/PageLoader.jsx";
-import useAuthUser from "./hooks/useAuthUser.js";
-import Layout from "./components/Layout.jsx";
-import { useThemeStore } from "./store/useThemeStore.js";
+const AppRoutes = ({ isAuthenticated, hasCompletedOnboarding }) => (
+  <Suspense fallback={<PageLoader />}>
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <ProtectedPage
+            isAuthenticated={isAuthenticated}
+            hasCompletedOnboarding={hasCompletedOnboarding}
+          >
+            <Layout showSidebar>
+              <HomePage />
+            </Layout>
+          </ProtectedPage>
+        }
+      />
+      <Route
+        path="/signup"
+        element={
+          isAuthenticated ? (
+            <Navigate to={hasCompletedOnboarding ? "/" : "/onboarding"} />
+          ) : (
+            <SignUpPage />
+          )
+        }
+      />
+      <Route
+        path="/login"
+        element={
+          isAuthenticated ? (
+            <Navigate to={hasCompletedOnboarding ? "/" : "/onboarding"} />
+          ) : (
+            <LoginPage />
+          )
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedPage
+            isAuthenticated={isAuthenticated}
+            hasCompletedOnboarding={hasCompletedOnboarding}
+          >
+            <Layout showSidebar>
+              <NotificationsPage />
+            </Layout>
+          </ProtectedPage>
+        }
+      />
+      <Route
+        path="/call/:id"
+        element={
+          <ProtectedPage
+            isAuthenticated={isAuthenticated}
+            hasCompletedOnboarding={hasCompletedOnboarding}
+          >
+            <CallPage />
+          </ProtectedPage>
+        }
+      />
+      <Route
+        path="/chat/:id"
+        element={
+          <ProtectedPage
+            isAuthenticated={isAuthenticated}
+            hasCompletedOnboarding={hasCompletedOnboarding}
+          >
+            <Layout showSidebar>
+              <ChatPage />
+            </Layout>
+          </ProtectedPage>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedPage
+            isAuthenticated={isAuthenticated}
+            hasCompletedOnboarding={hasCompletedOnboarding}
+          >
+            <Layout showSidebar>
+              <SettingsPage />
+            </Layout>
+          </ProtectedPage>
+        }
+      />
+      <Route
+        path="/onboarding"
+        element={isAuthenticated ? <OnboardingPage /> : <Navigate to="/login" />}
+      />
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  </Suspense>
+);
 
 const App = () => {
-  const { isLoading, authUser } = useAuthUser();
+  const { isLoading, authUser, error, retry } = useAuthUser();
   const { theme } = useThemeStore();
 
-  const isAuthenticated = Boolean(authUser);
-  const isOnboarded = authUser?.isOnboarding;
-
   if (isLoading) return <PageLoader />;
+  if (error) {
+    return (
+      <div className="app-shell" data-theme={theme}>
+        <main className="empty-page">
+          <p className="empty-page__code">Connection error</p>
+          <h1>Streamify is not reachable</h1>
+          <p>Check your connection and confirm the server is running, then try again.</p>
+          <button type="button" className="btn btn-primary" onClick={() => retry()}>
+            Try again
+          </button>
+        </main>
+      </div>
+    );
+  }
+
+  const isAuthenticated = Boolean(authUser);
+  const hasCompletedOnboarding = Boolean(authUser?.isOnboarding);
+  const routes = (
+    <AppRoutes
+      isAuthenticated={isAuthenticated}
+      hasCompletedOnboarding={hasCompletedOnboarding}
+    />
+  );
 
   return (
-    <div className="h-screen" data-theme={theme}>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              isAuthenticated && isOnboarded ? (
-                <Layout showSidebar={true}>
-                  <HomePage />
-                </Layout>
-              ) : (
-                <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
-              )
-            }
-          />
-          <Route
-            path="/signup"
-            element={
-              !isAuthenticated ? <SignUpPage /> : <Navigate to={isOnboarded ? "/" : "/onboarding"} />
-            }
-          />
-          <Route
-            path="/login"
-            element={
-              !isAuthenticated ? <LoginPage /> : <Navigate to={isOnboarded ? "/" : "/onboarding"} />
-            }
-          />
-          <Route
-            path="/notifications"
-            element={
-              isAuthenticated && isOnboarded ? (
-                <Layout showSidebar={true}>
-                  <NotificationsPage />
-                </Layout>
-              ) : (
-                <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
-              )
-            }
-          />
-          <Route
-            path="/call/:id"
-            element={
-              isAuthenticated && isOnboarded ? (
-                <CallPage />
-              ) : (
-                <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
-              )
-            }
-          />
-
-          <Route
-            path="/chat/:id"
-            element={
-              isAuthenticated && isOnboarded ? (
-                <Layout showSidebar={true}>
-                  <ChatPage />
-                </Layout>
-              ) : (
-                <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
-              )
-            }
-          />
-
-          <Route
-            path="/settings"
-            element={
-              isAuthenticated && isOnboarded ? (
-                <Layout showSidebar={true}>
-                  <SettingsPage />
-                </Layout>
-              ) : (
-                <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
-              )
-            }
-          />
-
-          <Route
-            path="/onboarding"
-            element={isAuthenticated ? <OnboardingPage /> : <Navigate to="/login" />}
-          />
-        </Routes>
-      </Suspense>
-
-      <Toaster />
+    <div className="app-shell" data-theme={theme}>
+      {isAuthenticated ? (
+        <Suspense fallback={<PageLoader />}>
+          <VideoProvider authUser={authUser}>{routes}</VideoProvider>
+        </Suspense>
+      ) : (
+        routes
+      )}
+      <Toaster position="top-right" toastOptions={{ duration: 4500 }} />
     </div>
   );
 };
+
 export default App;

@@ -1,14 +1,17 @@
 {
-  "name": "project",
+  "name": "streamify-video-chat",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Real-time language exchange chat with Stream video and messaging",
   "scripts": {
-   "build":"npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend",
-   "start":"npm run start --prefix backend"
+    "build": "npm ci --prefix backend --omit=dev && npm ci --prefix frontend --include=dev && npm run build --prefix frontend",
+    "start": "npm run start --prefix backend",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "lint": "npm run lint --prefix frontend",
+    "test": "npm test --prefix backend && npm test --prefix frontend"
   },
-  "keywords": [],
+  "keywords": ["video-chat", "stream", "react", "express", "mongodb"],
   "author": "",
-  "license": "ISC",
-  "type": "commonjs"
+  "license": "MIT",
+  "private": true
 }

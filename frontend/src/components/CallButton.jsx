@@ -1,13 +1,36 @@
-import { VideoIcon } from "lucide-react";
+import { PhoneIcon, VideoIcon } from "lucide-react";
 
-function CallButton({ handleVideoCall }) {
-  return (
-    <div className="p-3 border-b flex items-center justify-end max-w-7xl mx-auto w-full absolute top-0">
-      <button onClick={handleVideoCall} className="btn btn-success btn-sm text-white">
-        <VideoIcon className="size-6" />
-      </button>
-    </div>
-  );
-}
+const CallButton = ({ disabled, onStartCall, pendingMode }) => (
+  <div className="conversation-call-actions" aria-label="Call options">
+    <button
+      type="button"
+      className="icon-button"
+      onClick={() => onStartCall("audio")}
+      disabled={disabled || Boolean(pendingMode)}
+      aria-label="Start audio call"
+      title="Start audio call"
+    >
+      {pendingMode === "audio" ? (
+        <span className="loading loading-spinner loading-xs" />
+      ) : (
+        <PhoneIcon aria-hidden="true" />
+      )}
+    </button>
+    <button
+      type="button"
+      className="icon-button icon-button--primary"
+      onClick={() => onStartCall("video")}
+      disabled={disabled || Boolean(pendingMode)}
+      aria-label="Start video call"
+      title="Start video call"
+    >
+      {pendingMode === "video" ? (
+        <span className="loading loading-spinner loading-xs" />
+      ) : (
+        <VideoIcon aria-hidden="true" />
+      )}
+    </button>
+  </div>
+);
 
 export default CallButton;
