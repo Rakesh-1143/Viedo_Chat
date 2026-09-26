@@ -26,6 +26,7 @@ import toast from "react-hot-toast";
 import PageLoader from "../components/PageLoader";
 import { formatCallDuration, getCallErrorMessage, getCallMode } from "../lib/call";
 import { useVideoClient } from "../providers/videoContext";
+import { updateCallStatus } from "../lib/api";
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 
 const CALL_TYPE = import.meta.env.VITE_STREAM_CALL_TYPE || "default";
@@ -121,6 +122,13 @@ const CallExperience = () => {
   const { useCallCallingState } = useCallStateHooks();
   const callingState = useCallCallingState();
 
+  useEffect(() => {
+    if (!call) return;
+    if (callingState === CallingState.LEFT && !call.state.startedAt) {
+      updateCallStatus(call.id, { status: "missed" }).catch(() => undefined);
+    }
+  }, [call, callingState]);
+
   if (!call) return <CallUnavailable message="The call could not be loaded." />;
 
   if (callingState === CallingState.RINGING) {
@@ -200,6 +208,7 @@ const OutgoingCall = ({ call }) => {
     setIsCanceling(true);
     try {
       await call.leave({ reject: true, reason: "cancel" });
+      updateCallStatus(call.id, { status: "canceled" }).catch(() => undefined);
       navigate("/");
     } catch {
       toast.error("The call could not be canceled.");
@@ -239,6 +248,7 @@ const IncomingCall = ({ call }) => {
     try {
       if (getCallMode(call) === "audio") await call.camera.disable();
       await call.join();
+      updateCallStatus(call.id, { status: "accepted" }).catch(() => undefined);
     } catch (error) {
       toast.error(getCallErrorMessage(error));
       setBusy(false);
@@ -248,6 +258,7 @@ const IncomingCall = ({ call }) => {
   const reject = async () => {
     setBusy(true);
     await call.leave({ reject: true, reason: "decline" }).catch(() => undefined);
+    updateCallStatus(call.id, { status: "rejected" }).catch(() => undefined);
     navigate("/");
   };
 
@@ -411,6 +422,10 @@ const ActiveCallRoom = () => {
     setLeaving(true);
     try {
       await call.leave();
+      const durationSeconds = startedAt
+        ? Math.max(0, Math.round((Date.now() - new Date(startedAt).getTime()) / 1000))
+        : 0;
+      updateCallStatus(call.id, { status: "completed", durationSeconds }).catch(() => undefined);
       navigate("/");
     } catch {
       toast.error("The call could not close cleanly. Please try again.");

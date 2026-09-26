@@ -4,6 +4,7 @@ import { Toaster } from "react-hot-toast";
 import Layout from "./components/Layout.jsx";
 import PageLoader from "./components/PageLoader.jsx";
 import useAuthUser from "./hooks/useAuthUser.js";
+import { useGlobalNotifications } from "./hooks/useGlobalNotifications.js";
 import { useThemeStore } from "./store/useThemeStore.js";
 
 const HomePage = lazy(() => import("./pages/HomePage.jsx"));
@@ -11,11 +12,17 @@ const SignUpPage = lazy(() => import("./pages/SignUpPage.jsx"));
 const LoginPage = lazy(() => import("./pages/LoginPage.jsx"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage.jsx"));
 const CallPage = lazy(() => import("./pages/CallPage.jsx"));
+const CallHistoryPage = lazy(() => import("./pages/CallHistoryPage.jsx"));
 const ChatPage = lazy(() => import("./pages/ChatPage.jsx"));
 const OnboardingPage = lazy(() => import("./pages/OnboardingPage.jsx"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage.jsx"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage.jsx"));
 const VideoProvider = lazy(() => import("./providers/VideoProvider.jsx"));
+
+const GlobalNotifications = ({ authUser }) => {
+  useGlobalNotifications(authUser);
+  return null;
+};
 
 const ProtectedPage = ({ isAuthenticated, hasCompletedOnboarding, children }) => {
   if (!isAuthenticated) return <Navigate to="/login" />;
@@ -97,6 +104,19 @@ const AppRoutes = ({ isAuthenticated, hasCompletedOnboarding }) => (
         }
       />
       <Route
+        path="/calls"
+        element={
+          <ProtectedPage
+            isAuthenticated={isAuthenticated}
+            hasCompletedOnboarding={hasCompletedOnboarding}
+          >
+            <Layout showSidebar>
+              <CallHistoryPage />
+            </Layout>
+          </ProtectedPage>
+        }
+      />
+      <Route
         path="/settings"
         element={
           <ProtectedPage
@@ -151,7 +171,10 @@ const App = () => {
     <div className="app-shell" data-theme={theme}>
       {isAuthenticated ? (
         <Suspense fallback={<PageLoader />}>
-          <VideoProvider authUser={authUser}>{routes}</VideoProvider>
+          <VideoProvider authUser={authUser}>
+            <GlobalNotifications authUser={authUser} />
+            {routes}
+          </VideoProvider>
         </Suspense>
       ) : (
         routes

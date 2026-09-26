@@ -3,6 +3,7 @@ import useAuthUser from "../hooks/useAuthUser";
 import {
   BellIcon,
   HomeIcon,
+  PhoneIcon,
   ShipWheelIcon,
   UsersIcon,
   SearchIcon,
@@ -259,6 +260,20 @@ const Sidebar = ({ onClose }) => {
         >
           <SearchIcon className="size-5 text-base-content opacity-70" />
           <span>Make New Connections</span>
+        </button>
+
+        {/* CALL HISTORY BUTTON */}
+        <button
+          onClick={() => {
+            if (onClose) onClose();
+            navigate("/calls");
+          }}
+          className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case relative ${
+            currentPath === "/calls" ? "btn-active" : ""
+          }`}
+        >
+          <PhoneIcon className="size-5 text-base-content opacity-70" />
+          <span>Call History</span>
         </button>
       </nav>
 

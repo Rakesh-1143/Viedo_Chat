@@ -7,6 +7,7 @@ import {
   MessageInput,
   MessageList,
   Thread,
+  TypingIndicator,
   Window,
 } from "stream-chat-react";
 import toast from "react-hot-toast";
@@ -16,6 +17,7 @@ import {
   authorizeDirectCall,
   getDirectConversation,
   getStreamToken,
+  logCallStart,
 } from "../lib/api";
 import ChatLoader from "../components/ChatLoader";
 import CallButton from "../components/CallButton";
@@ -144,6 +146,13 @@ const ChatPage = ({ id: propId }) => {
           })
           .catch((error) => console.error("Could not add call activity to chat", error));
 
+        logCallStart({
+          callId: callAuthorization.callId,
+          channelId: channel.cid,
+          calleeId: String(targetUserId),
+          mode,
+        }).catch((error) => console.error("Could not log call history", error));
+
         navigate(
           `/call/${callAuthorization.callId}?type=${encodeURIComponent(
             callAuthorization.callType || "default",
@@ -220,6 +229,7 @@ const ChatPage = ({ id: propId }) => {
               />
             </header>
             <MessageList />
+            <TypingIndicator />
             <MessageInput focus />
           </Window>
           <Thread />
