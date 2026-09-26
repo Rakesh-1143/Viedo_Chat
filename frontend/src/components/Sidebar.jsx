@@ -7,6 +7,7 @@ import {
   UsersIcon,
   SearchIcon,
   XIcon,
+  ChevronDownIcon,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -33,6 +34,7 @@ const Sidebar = ({ onClose }) => {
   };
 
   const [unreadCounts, setUnreadCounts] = useState({});
+  const [onlineUserIds, setOnlineUserIds] = useState(() => new Set());
   const [isRequestsOpen, setIsRequestsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -53,7 +55,9 @@ const Sidebar = ({ onClose }) => {
   const { data: tokenData } = useQuery({
     queryKey: ["streamToken", authUser?._id],
     queryFn: getStreamToken,
-    enabled: !!authUser,
+    enabled: Boolean(authUser && streamClient),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
 
   const incomingReqs = friendRequests?.incomingReqs || [];
@@ -61,14 +65,23 @@ const Sidebar = ({ onClose }) => {
 
   useEffect(() => {
     if (!authUser || !tokenData?.token) return;
+    let disposed = false;
 
     const handleEvent = (event) => {
-      if (
+      if (event.type === "user.presence.changed" && event.user?.id) {
+        setOnlineUserIds((currentIds) => {
+          const nextIds = new Set(currentIds);
+          if (event.user.online) nextIds.add(String(event.user.id));
+          else nextIds.delete(String(event.user.id));
+          return nextIds;
+        });
+      } else if (
         event.type === "message.new" ||
         event.type === "notification.message_new"
       ) {
-        if (event.user.id !== authUser._id) {
+        if (String(event.user?.id) !== String(authUser._id)) {
           const channelId = event.channel_id || event.cid?.split(":")[1];
+          if (!channelId) return;
           setUnreadCounts((prev) => ({
             ...prev,
             [channelId]: (prev[channelId] || 0) + 1,
@@ -78,8 +91,9 @@ const Sidebar = ({ onClose }) => {
         event.type === "message.read" ||
         event.type === "notification.mark_read"
       ) {
-        if (event.user.id === authUser._id) {
+        if (String(event.user?.id) === String(authUser._id)) {
           const channelId = event.channel_id || event.cid?.split(":")[1];
+          if (!channelId) return;
           setUnreadCounts((prev) => ({
             ...prev,
             [channelId]: 0,
@@ -97,14 +111,20 @@ const Sidebar = ({ onClose }) => {
         const channels = await streamClient.queryChannels(
           filter,
           {},
-          { watch: true },
+          { watch: true, state: true, presence: true },
         );
+        if (disposed) return;
 
         const counts = {};
+        const onlineIds = new Set();
         channels.forEach((c) => {
           counts[c.id] = c.countUnread();
+          Object.values(c.state.members || {}).forEach((member) => {
+            if (member.user?.online) onlineIds.add(String(member.user.id));
+          });
         });
         setUnreadCounts(counts);
+        setOnlineUserIds(onlineIds);
 
         streamClient.on(handleEvent);
       } catch (error) {
@@ -115,26 +135,31 @@ const Sidebar = ({ onClose }) => {
     initStream();
 
     return () => {
-      streamClient.off(handleEvent);
+      disposed = true;
+      streamClient?.off(handleEvent);
     };
-  }, [authUser, tokenData]);
+  }, [authUser, tokenData?.token]);
 
   return (
-    <aside className="w-full lg:w-72 bg-base-200 border-r border-base-300 flex flex-col h-screen sticky top-0">
+    <aside className="sticky top-0 flex h-screen w-full flex-col border-r border-base-300 bg-base-100 lg:w-72">
       <div className="p-5 border-b border-base-300 flex items-center justify-between">
         <Link 
           to="/" 
           onClick={() => handleNavigation("friends")}
-          className="flex items-center gap-2.5"
+          className="brand-mark"
         >
-          <ShipWheelIcon className="size-9 text-primary" />
-          <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary  tracking-wider">
-            Streamify
-          </span>
+          <ShipWheelIcon aria-hidden="true" />
+          <span>Streamify</span>
         </Link>
         {onClose && (
-          <button onClick={onClose} className="btn btn-ghost btn-circle lg:hidden">
-            <XIcon className="size-6" />
+          <button
+            type="button"
+            onClick={onClose}
+            className="icon-button lg:hidden"
+            aria-label="Close navigation"
+            title="Close navigation"
+          >
+            <XIcon aria-hidden="true" />
           </button>
         )}
       </div>
@@ -153,9 +178,11 @@ const Sidebar = ({ onClose }) => {
         {/* FRIEND REQUESTS TOGGLE */}
         <div>
           <button
+            type="button"
             onClick={() => {
               setIsRequestsOpen(!isRequestsOpen);
             }}
+            aria-expanded={isRequestsOpen}
             className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case relative ${
               currentPath === "/notifications" ? "btn-active" : ""
             }`}
@@ -167,19 +194,10 @@ const Sidebar = ({ onClose }) => {
                 {pendingCount}
               </span>
             )}
-            <svg
+            <ChevronDownIcon
               className={`size-3 ml-1 transition-transform ${isRequestsOpen ? "rotate-180" : ""}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
+              aria-hidden="true"
+            />
           </button>
 
           {isRequestsOpen && (
@@ -264,9 +282,10 @@ const Sidebar = ({ onClose }) => {
               <input
                 type="text"
                 placeholder="Search friends..."
-                className="input input-bordered input-sm w-full pl-9 bg-base-300/50 border-none focus:bg-base-300 transition-all rounded-xl"
+                className="input input-bordered input-sm w-full rounded-lg bg-base-200 pl-9 transition-colors focus:bg-base-100"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Search friends"
               />
             </div>
           </div>
@@ -289,6 +308,7 @@ const Sidebar = ({ onClose }) => {
             filteredFriends.map((friend) => {
               const channelId = [authUser._id, friend._id].sort().join("-");
               const unreadCount = unreadCounts[channelId] || 0;
+              const isOnline = onlineUserIds.has(String(friend._id));
 
               return (
                 <button
@@ -301,7 +321,7 @@ const Sidebar = ({ onClose }) => {
                     currentPath === `/chat/${friend._id}` ? "bg-base-300" : ""
                   }`}
                 >
-                  <div className="avatar">
+                  <div className="avatar relative">
                     <div className="w-10 rounded-full border border-base-300">
                       <img 
                       src={friend.profilePic} 
@@ -311,10 +331,17 @@ const Sidebar = ({ onClose }) => {
                       }}
                     />
                     </div>
+                    <span
+                      className={`presence-dot ${isOnline ? "presence-dot--online" : ""}`}
+                      aria-label={isOnline ? "Online" : "Offline"}
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">
                       {friend.fullName}
+                    </p>
+                    <p className={`text-xs ${isOnline ? "text-success" : "opacity-50"}`}>
+                      {isOnline ? "Online" : "Offline"}
                     </p>
                   </div>
                   {unreadCount > 0 && (

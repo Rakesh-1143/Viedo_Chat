@@ -1,7 +1,7 @@
 import { useState } from "react";
-import useAuthUser from "../hooks/useAuthUser";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteAccount, updatePassword } from "../lib/api";
+import { streamClient } from "../lib/stream";
 import useLogout from "../hooks/useLogout";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 
 const SettingsPage = () => {
-  const { authUser } = useAuthUser();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { logoutMutation } = useLogout();
@@ -35,7 +34,10 @@ const SettingsPage = () => {
 
   const { mutate: deleteAccountMutation, isPending: isDeleting } = useMutation({
     mutationFn: () => deleteAccount(deleteReason),
-    onSuccess: () => {
+    onSuccess: async () => {
+      if (streamClient?.userID) {
+        await streamClient.disconnectUser().catch(() => undefined);
+      }
       toast.success("Account deleted permanently");
       queryClient.setQueryData(["authUser"], null);
       navigate("/login");
@@ -157,7 +159,10 @@ const SettingsPage = () => {
                         type={showPass ? "text" : "password"}
                         className="input input-bordered w-full bg-base-100"
                         required
-                        minLength={6}
+                        minLength={8}
+                        maxLength={128}
+                        pattern="(?=.*[A-Za-z])(?=.*\d).{8,128}"
+                        title="Use 8 to 128 characters with at least one letter and one number"
                         value={passwords.newPassword}
                         onChange={(e) =>
                           setPasswords({

@@ -18,20 +18,15 @@ const LoginPage = () => {
   };
 
   return (
-    <div
-      className="h-screen flex items-center justify-center p-4 sm:p-6 md:p-8"
-      data-theme="forest"
-    >
-      <div className="border border-primary/25 flex flex-col lg:flex-row w-full max-w-5xl mx-auto bg-base-100 rounded-xl shadow-lg overflow-hidden">
+    <main className="auth-page flex items-center">
+      <div className="auth-panel">
         {/* LOGIN FORM SECTION */}
-        <div className="w-full lg:w-1/2 p-4 sm:p-8 flex flex-col">
+        <section className="auth-form">
           {/* LOGO */}
-          <div className="mb-4 flex items-center justify-start gap-2">
-            <ShipWheelIcon className="size-9 text-primary" />
-            <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary  tracking-wider">
-              Streamify
-            </span>
-          </div>
+          <Link to="/" className="brand-mark" aria-label="Streamify home">
+            <ShipWheelIcon aria-hidden="true" />
+            <span>Streamify</span>
+          </Link>
 
           {/* ERROR MESSAGE DISPLAY */}
           {error && (
@@ -43,8 +38,8 @@ const LoginPage = () => {
           <div className="w-full">
             <form onSubmit={handleLogin}>
               <div className="space-y-4">
-                <div>
-                  <h2 className="text-xl font-semibold">Welcome Back</h2>
+                <div className="auth-form__intro">
+                  <h1>Welcome back</h1>
                   <p className="text-sm opacity-70">
                     Sign in to your account to continue your language journey
                   </p>
@@ -57,6 +52,8 @@ const LoginPage = () => {
                     </label>
                     <input
                       type="email"
+                      name="email"
+                      autoComplete="email"
                       placeholder="hello@example.com"
                       className="input input-bordered w-full"
                       value={loginData.email}
@@ -72,6 +69,8 @@ const LoginPage = () => {
                     <div className="relative">
                       <input
                         type={showPassword ? "text" : "password"}
+                        name="password"
+                        autoComplete="current-password"
                         placeholder="••••••••"
                         className="input input-bordered w-full"
                         value={loginData.password}
@@ -82,6 +81,7 @@ const LoginPage = () => {
                         type="button"
                         className="absolute right-3 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 transition-opacity"
                         onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
                       >
                         {showPassword ? <EyeOffIcon size={20} /> : <EyeIcon size={20} />}
                       </button>
@@ -111,10 +111,10 @@ const LoginPage = () => {
               </div>
             </form>
           </div>
-        </div>
+        </section>
 
         {/* IMAGE SECTION */}
-        <div className="hidden lg:flex w-full lg:w-1/2 bg-primary/10 items-center justify-center">
+        <aside className="auth-media">
           <div className="max-w-md p-8">
             {/* Illustration */}
             <div className="relative aspect-square max-w-sm mx-auto">
@@ -128,9 +128,9 @@ const LoginPage = () => {
               </p>
             </div>
           </div>
-        </div>
+        </aside>
       </div>
-    </div>
+    </main>
   );
 };
 export default LoginPage;

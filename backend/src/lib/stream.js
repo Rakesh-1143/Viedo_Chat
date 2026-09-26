@@ -6,9 +6,7 @@ const apiSecret = process.env.STREAM_API_SECRET;
 
 let streamClient;
 
-if (!apiKey || !apiSecret) {
-  console.error("CRITICAL: Stream API key or Secret is missing. Check your .env file.");
-} else {
+if (apiKey && apiSecret) {
   try {
     streamClient = StreamChat.getInstance(apiKey, apiSecret);
   } catch (err) {
@@ -17,23 +15,31 @@ if (!apiKey || !apiSecret) {
 }
 
 export const upsertStreamUser = async (userData) => {
-  if (!streamClient) return;
-  try {
-    await streamClient.upsertUsers([userData]);
-    return userData;
-  } catch (error) {
-    console.error("Error upserting Stream user:", error);
-  }
+  if (!streamClient) throw new Error("Stream service is not configured");
+  await streamClient.upsertUsers([userData]);
+  return userData;
 };
 
 export const generateStreamToken = (userId) => {
-  if (!streamClient) return "";
-  try {
-    // ensure userId is a string
-    const userIdStr = userId.toString();
-    return streamClient.createToken(userIdStr);
-  } catch (error) {
-    console.error("Error generating Stream token:", error);
-    return "";
-  }
+  if (!streamClient) throw new Error("Stream service is not configured");
+  return streamClient.createToken(userId.toString());
 };
+
+export const createDirectChannel = async (channelId, memberIds) => {
+  if (!streamClient) throw new Error("Stream service is not configured");
+  const channel = streamClient.channel("messaging", channelId, {
+    members: memberIds.map(String),
+  });
+  await channel.create();
+  return channel;
+};
+
+export const deleteStreamUser = async (userId) => {
+  if (!streamClient) return;
+  await streamClient.deleteUser(String(userId), {
+    delete_conversation_channels: true,
+    mark_messages_deleted: true,
+  });
+};
+
+export const isStreamConfigured = () => Boolean(streamClient);

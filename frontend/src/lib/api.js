@@ -19,13 +19,13 @@ export const getAuthUser = async () => {
     const res = await axiosInstance.get("/auth/me");
     return res.data;
   } catch (error) {
-    console.log("Error in getAuthUser:", error);
-    return null;
+    if (error.response?.status === 401) return null;
+    throw error;
   }
 };
 
 export const completeOnboarding = async (userData) => {
-  const response = await axiosInstance.post("/auth/onboarding", userData);
+  const response = await axiosInstance.put("/auth/onboarding", userData);
   return response.data;
 };
 
@@ -46,7 +46,9 @@ export async function getUserFriends() {
 
 export async function getRecommendedUsers(params = {}) {
   const { page = 1, limit = 10, search = "" } = params;
-  const response = await axiosInstance.get(`/users?page=${page}&limit=${limit}&search=${search}`);
+  const response = await axiosInstance.get("/users", {
+    params: { page, limit, search },
+  });
   return response.data;
 }
 
@@ -72,5 +74,15 @@ export async function acceptFriendRequest(requestId) {
 
 export async function getStreamToken() {
   const response = await axiosInstance.get("/chat/token");
+  return response.data;
+}
+
+export async function getDirectConversation(userId) {
+  const response = await axiosInstance.get(`/chat/direct/${encodeURIComponent(userId)}`);
+  return response.data;
+}
+
+export async function authorizeDirectCall(userId) {
+  const response = await axiosInstance.post(`/chat/call/${encodeURIComponent(userId)}`);
   return response.data;
 }

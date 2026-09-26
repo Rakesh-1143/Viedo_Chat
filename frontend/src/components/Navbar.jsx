@@ -1,92 +1,103 @@
 import { Link } from "react-router";
+import {
+  LogOutIcon,
+  MenuIcon,
+  SettingsIcon,
+  ShipWheelIcon,
+  UserCircleIcon,
+} from "lucide-react";
 import useAuthUser from "../hooks/useAuthUser";
-import { LogOutIcon, MenuIcon, ShipWheelIcon, UserCircleIcon, SettingsIcon } from "lucide-react";
-import ThemeSelector from "./ThemeSelector";
 import useLogout from "../hooks/useLogout";
+import ThemeSelector from "./ThemeSelector";
 
 const Navbar = ({ onMenuClick, showMenuButton = false }) => {
   const { authUser } = useAuthUser();
-  const { logoutMutation } = useLogout();
+  const { logoutMutation, isPending } = useLogout();
 
   return (
-    <nav className="bg-base-200 border-b border-base-300 sticky top-0 z-30 h-16 flex items-center">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          {/* MOBILE MENU BUTTON */}
+    <nav className="sticky top-0 z-30 flex h-16 flex-none items-center border-b border-base-300 bg-base-100">
+      <div className="flex w-full items-center justify-between px-3 sm:px-5">
+        <div className="flex items-center gap-2">
           {showMenuButton && (
-            <button 
+            <button
+              type="button"
               onClick={onMenuClick}
-              className="btn btn-ghost btn-circle lg:hidden"
+              className="icon-button lg:hidden"
+              aria-label="Open navigation"
+              title="Open navigation"
             >
-              <MenuIcon className="size-6" />
+              <MenuIcon aria-hidden="true" />
             </button>
           )}
-
-          {/* LOGO */}
-          <Link to="/" className="flex items-center gap-2.5">
-            <ShipWheelIcon className="size-8 text-primary" />
-            <span className="text-2xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary tracking-wider hidden sm:block">
-              Streamify
-            </span>
+          <Link to="/" className="brand-mark lg:hidden" aria-label="Streamify home">
+            <ShipWheelIcon aria-hidden="true" />
+            <span className="hidden sm:inline">Streamify</span>
           </Link>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-4 ml-auto">
-          {/* HAMBURGER DROPDOWN */}
-          <div className="dropdown dropdown-end">
-            <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar border border-base-300">
-              <div className="w-8 sm:w-10 rounded-full">
+        <div className="dropdown dropdown-end ml-auto">
+          <button
+            type="button"
+            tabIndex={0}
+            className="flex h-11 items-center gap-2 rounded-lg border border-base-300 bg-base-100 px-1.5 pr-3 hover:bg-base-200"
+            aria-label="Open account menu"
+          >
+            <div className="avatar">
+              <div className="w-8 rounded-full bg-base-200">
                 {authUser?.profilePic ? (
-                  <img 
-                    src={authUser.profilePic} 
-                    alt="User Avatar" 
-                    onError={(e) => {
-                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser?.fullName || "User")}&background=random`;
+                  <img
+                    src={authUser.profilePic}
+                    alt=""
+                    onError={(event) => {
+                      event.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser?.fullName || "User")}&background=64748b&color=ffffff`;
                     }}
                   />
                 ) : (
-                  <MenuIcon className="h-5 w-5 sm:h-6 sm:w-6 m-auto" />
+                  <UserCircleIcon className="m-1 size-6" aria-hidden="true" />
                 )}
               </div>
             </div>
-            <ul
-              tabIndex={0}
-              className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 border border-base-300 rounded-box w-52"
-            >
-              <li className="menu-title px-4 py-2 opacity-50">
-                Hi, {authUser?.fullName?.split(" ")[0]}
-              </li>
-              <div className="divider my-0"></div>
-              <li>
-                <Link to="/onboarding" className="flex items-center gap-2 py-3">
-                  <UserCircleIcon className="h-4 w-4" />
-                  Update Profile
-                </Link>
-              </li>
+            <span className="hidden max-w-40 truncate text-sm font-semibold sm:block">
+              {authUser?.fullName}
+            </span>
+          </button>
 
-              <li>
-                <Link to="/settings" className="flex items-center gap-2 py-3">
-                  <SettingsIcon className="h-4 w-4" />
-                  Settings
-                </Link>
-              </li>
-              
-              <ThemeSelector isMenuItem={true} />
-
-              <li>
-                <button
-                  className="flex items-center gap-2 py-3 text-error"
-                  onClick={() => logoutMutation()}
-                >
-                  <LogOutIcon className="h-4 w-4" />
-                  Logout
-                </button>
-              </li>
-            </ul>
-          </div>
+          <ul
+            tabIndex={0}
+            className="menu dropdown-content z-[1] mt-2 w-56 rounded-lg border border-base-300 bg-base-100 p-2 shadow-xl"
+          >
+            <li className="menu-title px-3 py-2">
+              <span>{authUser?.email}</span>
+            </li>
+            <li>
+              <Link to="/onboarding">
+                <UserCircleIcon className="size-4" aria-hidden="true" />
+                Edit profile
+              </Link>
+            </li>
+            <li>
+              <Link to="/settings">
+                <SettingsIcon className="size-4" aria-hidden="true" />
+                Settings
+              </Link>
+            </li>
+            <ThemeSelector isMenuItem />
+            <li>
+              <button
+                type="button"
+                className="text-error"
+                onClick={() => logoutMutation()}
+                disabled={isPending}
+              >
+                <LogOutIcon className="size-4" aria-hidden="true" />
+                {isPending ? "Signing out..." : "Sign out"}
+              </button>
+            </li>
+          </ul>
         </div>
       </div>
     </nav>
   );
 };
+
 export default Navbar;

@@ -33,33 +33,28 @@ const SignUpPage = () => {
   };
 
   return (
-    <div
-      className="h-screen flex items-center justify-center p-4 sm:p-6 md:p-8"
-      data-theme="forest"
-    >
-      <div className="border border-primary/25 flex flex-col lg:flex-row w-full max-w-5xl mx-auto bg-base-100 rounded-xl shadow-lg overflow-hidden">
+    <main className="auth-page flex items-center">
+      <div className="auth-panel">
         {/* SIGNUP FORM - LEFT SIDE */}
-        <div className="w-full lg:w-1/2 p-4 sm:p-8 flex flex-col">
+        <section className="auth-form">
           {/* LOGO */}
-          <div className="mb-4 flex items-center justify-start gap-2">
-            <ShipWheelIcon className="size-9 text-primary" />
-            <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary tracking-wider">
-              Streamify
-            </span>
-          </div>
+          <Link to="/" className="brand-mark" aria-label="Streamify home">
+            <ShipWheelIcon aria-hidden="true" />
+            <span>Streamify</span>
+          </Link>
 
           {/* ERROR MESSAGE IF ANY */}
           {error && (
             <div className="alert alert-error mb-4">
-              <span>{error.response.data.message}</span>
+              <span>{error.response?.data?.message || "Could not create your account"}</span>
             </div>
           )}
 
           <div className="w-full">
             <form onSubmit={handleSignup}>
               <div className="space-y-4">
-                <div>
-                  <h2 className="text-xl font-semibold">Create an Account</h2>
+                <div className="auth-form__intro">
+                  <h1>Create your account</h1>
                   <p className="text-sm opacity-70">
                     Join Streamify and start your language learning adventure!
                   </p>
@@ -73,6 +68,8 @@ const SignUpPage = () => {
                     </label>
                     <input
                       type="text"
+                      name="fullName"
+                      autoComplete="name"
                       placeholder="John Doe"
                       className="input input-bordered w-full"
                       value={signupData.fullName}
@@ -87,6 +84,8 @@ const SignUpPage = () => {
                     </label>
                     <input
                       type="email"
+                      name="email"
+                      autoComplete="email"
                       placeholder="john@gmail.com"
                       className="input input-bordered w-full"
                       value={signupData.email}
@@ -101,6 +100,8 @@ const SignUpPage = () => {
                     </label>
                     <input
                       type="tel"
+                      name="phoneNumber"
+                      autoComplete="tel"
                       placeholder="+1 234 567 8900"
                       className="input input-bordered w-full"
                       value={signupData.phoneNumber}
@@ -115,22 +116,26 @@ const SignUpPage = () => {
                     <div className="relative">
                       <input
                         type={showPassword ? "text" : "password"}
+                        name="password"
+                        autoComplete="new-password"
                         placeholder="********"
                         className="input input-bordered w-full"
                         value={signupData.password}
                         onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                        minLength={8}
                         required
                       />
                       <button
                         type="button"
                         className="absolute right-3 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 transition-opacity"
                         onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
                       >
                         {showPassword ? <EyeOffIcon size={20} /> : <EyeIcon size={20} />}
                       </button>
                     </div>
                     <p className="text-xs opacity-70 mt-1">
-                      Password must be at least 6 characters long
+                      Use at least 8 characters with a letter and a number
                     </p>
                   </div>
 
@@ -138,15 +143,13 @@ const SignUpPage = () => {
                     <label className="label cursor-pointer justify-start gap-2">
                       <input type="checkbox" className="checkbox checkbox-sm" required />
                       <span className="text-xs leading-tight">
-                        I agree to the{" "}
-                        <span className="text-primary hover:underline">terms of service</span> and{" "}
-                        <span className="text-primary hover:underline">privacy policy</span>
+                        I agree to follow the community guidelines
                       </span>
                     </label>
                   </div>
                 </div>
 
-                <button className="btn btn-primary w-full" type="submit">
+                <button className="btn btn-primary w-full" type="submit" disabled={isPending}>
                   {isPending ? (
                     <>
                       <span className="loading loading-spinner loading-xs"></span>
@@ -168,10 +171,10 @@ const SignUpPage = () => {
               </div>
             </form>
           </div>
-        </div>
+        </section>
 
         {/* SIGNUP FORM - RIGHT SIDE */}
-        <div className="hidden lg:flex w-full lg:w-1/2 bg-primary/10 items-center justify-center">
+        <aside className="auth-media">
           <div className="max-w-md p-8">
             {/* Illustration */}
             <div className="relative aspect-square max-w-sm mx-auto">
@@ -185,9 +188,9 @@ const SignUpPage = () => {
               </p>
             </div>
           </div>
-        </div>
+        </aside>
       </div>
-    </div>
+    </main>
   );
 };
 

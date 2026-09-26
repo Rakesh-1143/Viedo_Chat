@@ -35,7 +35,7 @@ const OnboardingPage = () => {
   // Sync form state when authUser is loaded
   useEffect(() => {
     if (authUser) {
-      setFormState({
+      const nextFormState = {
         fullName: authUser.fullName || "",
         bio: authUser.bio || "",
         nativeLanguage: authUser.nativeLanguage || "",
@@ -43,8 +43,16 @@ const OnboardingPage = () => {
         location: authUser.location || "",
         profilePic: authUser.profilePic || "",
         phoneNumber: authUser.phoneNumber || "",
+      };
+      let disposed = false;
+      queueMicrotask(() => {
+        if (!disposed) setFormState(nextFormState);
       });
+      return () => {
+        disposed = true;
+      };
     }
+    return undefined;
   }, [authUser]);
 
   const { mutate: onboardingMutation, isPending } = useMutation({
@@ -75,9 +83,12 @@ const OnboardingPage = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (file.size > 1024 * 1024 * 3) {
-      // 3MB limit for base64
-      return toast.error("Image size must be less than 3MB");
+    if (!file.type.startsWith("image/")) {
+      return toast.error("Choose an image file.");
+    }
+
+    if (file.size > 1024 * 1024 * 2) {
+      return toast.error("Image size must be less than 2MB");
     }
 
     const reader = new FileReader();
@@ -161,7 +172,7 @@ const OnboardingPage = () => {
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current.click()}
+                  onClick={() => fileInputRef.current?.click()}
                   className="btn btn-outline btn-sm gap-2"
                 >
                   <UploadIcon className="size-4" />
