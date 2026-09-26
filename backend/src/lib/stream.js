@@ -25,10 +25,11 @@ export const generateStreamToken = (userId) => {
   return streamClient.createToken(userId.toString());
 };
 
-export const createDirectChannel = async (channelId, memberIds) => {
+export const createDirectChannel = async (channelId, memberIds, createdBy) => {
   if (!streamClient) throw new Error("Stream service is not configured");
   const channel = streamClient.channel("messaging", channelId, {
     members: memberIds.map(String),
+    created_by_id: String(createdBy),
   });
   await channel.create();
   return channel;
