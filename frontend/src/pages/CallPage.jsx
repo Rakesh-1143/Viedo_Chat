@@ -49,7 +49,7 @@ const useElapsedTime = (startedAt) => {
 const CallPage = () => {
   const { id: callId } = useParams();
   const [searchParams] = useSearchParams();
-  const { client, error: clientError, isLoading } = useVideoClient();
+  const { client, error: clientError, isLoading, isReady } = useVideoClient();
   const callType = searchParams.get("type") || CALL_TYPE;
   const call = useMemo(
     () => (client && callId ? client.call(callType, callId) : null),
@@ -58,7 +58,7 @@ const CallPage = () => {
   const [loadError, setLoadError] = useState(null);
 
   useEffect(() => {
-    if (!call) return undefined;
+    if (!call || !isReady) return undefined;
     const state = call.state.callingState;
     if (state === CallingState.UNKNOWN || state === CallingState.IDLE) {
       call.get().catch((error) => {
@@ -77,9 +77,9 @@ const CallPage = () => {
       window.removeEventListener("pagehide", leaveOnPageExit);
       leaveOnPageExit();
     };
-  }, [call]);
+  }, [call, isReady]);
 
-  if (isLoading) return <PageLoader />;
+  if (isLoading || (client && !isReady && !clientError)) return <PageLoader />;
 
   if (!client || !call || clientError || loadError) {
     return (

@@ -142,6 +142,35 @@ export const VideoProvider = ({ authUser, children }) => {
     });
   }, [apiKey, token, userId, userImage, userName]);
 
+  const [connectionState, setConnectionState] = useState({
+    client: null,
+    ready: false,
+    timedOut: false,
+  });
+
+  useEffect(() => {
+    if (!client) return undefined;
+
+    const subscription = client.state.connectedUser$.subscribe((user) => {
+      setConnectionState((prev) => ({
+        client,
+        ready: Boolean(user),
+        timedOut: prev.client === client ? prev.timedOut : false,
+      }));
+    });
+    const timeoutId = window.setTimeout(() => {
+      setConnectionState((prev) => ({ ...prev, client, timedOut: true }));
+    }, 10_000);
+
+    return () => {
+      subscription.unsubscribe();
+      window.clearTimeout(timeoutId);
+    };
+  }, [client]);
+
+  const isReady = connectionState.client === client && connectionState.ready;
+  const connectTimedOut = connectionState.client === client && connectionState.timedOut;
+
   useEffect(() => {
     if (!client) return undefined;
 
@@ -167,10 +196,13 @@ export const VideoProvider = ({ authUser, children }) => {
     };
   }, [client]);
 
-  const value = useMemo(
-    () => ({ client, error: error || null, isLoading }),
-    [client, error, isLoading],
-  );
+  const value = useMemo(() => {
+    const timeoutError =
+      !isReady && connectTimedOut
+        ? new Error("Could not connect to the video service. Check your network and try again.")
+        : null;
+    return { client, error: error || timeoutError, isLoading, isReady };
+  }, [client, connectTimedOut, error, isLoading, isReady]);
 
   if (!client) {
     return (
