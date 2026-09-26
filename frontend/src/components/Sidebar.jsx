@@ -142,7 +142,7 @@ const Sidebar = ({ onClose }) => {
   }, [authUser, tokenData?.token]);
 
   return (
-    <aside className="sticky top-0 flex h-screen w-full flex-col border-r border-base-300 bg-base-100 lg:w-72">
+    <aside className="sticky top-0 flex h-screen w-full flex-col border-r border-base-300 bg-base-200/40 lg:w-72">
       <div className="p-5 border-b border-base-300 flex items-center justify-between">
         <Link 
           to="/" 
@@ -332,8 +332,10 @@ const Sidebar = ({ onClose }) => {
                     if (onClose) onClose();
                     navigate(`/chat/${friend._id}`);
                   }}
-                  className={`flex items-center w-full text-left gap-3 p-2 rounded-lg hover:bg-base-300 transition-colors ${
-                    currentPath === `/chat/${friend._id}` ? "bg-base-300" : ""
+                  className={`flex items-center w-full text-left gap-3 p-2 rounded-lg transition-colors ${
+                    currentPath === `/chat/${friend._id}`
+                      ? "bg-primary/10 shadow-[inset_3px_0_0_var(--color-primary)]"
+                      : "hover:bg-base-300"
                   }`}
                 >
                   <div className="avatar relative">

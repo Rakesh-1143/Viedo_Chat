@@ -66,7 +66,10 @@ const SettingsPage = () => {
     <div className="container mx-auto max-w-4xl p-4 sm:p-6 lg:p-8">
       <div className="flex items-center gap-3 mb-8">
         <SettingsIcon className="size-8 text-primary" />
-        <h1 className="text-3xl font-bold">Settings</h1>
+        <div>
+          <p className="page-kicker mb-0">Account</p>
+          <h1 className="text-3xl font-bold">Settings</h1>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
