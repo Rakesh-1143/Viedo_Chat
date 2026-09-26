@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import authRoutes from "./routes/auth.route.js";
 import userRoutes from "./routes/user.router.js";
 import chatRoutes from "./routes/chat.route.js";
+import callRoutes from "./routes/call.route.js";
 import { getAllowedOrigins } from "./config/env.js";
 import { errorHandler, notFound } from "./middleware/error.middleware.js";
 
@@ -85,6 +86,7 @@ export const createApp = () => {
   app.use("/api/auth", authRoutes);
   app.use("/api/users", userRoutes);
   app.use("/api/chat", chatRoutes);
+  app.use("/api/calls", callRoutes);
   app.use("/api", notFound);
 
   if (process.env.NODE_ENV === "production") {

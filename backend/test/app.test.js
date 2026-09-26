@@ -63,3 +63,15 @@ test("invalid session cookies are rejected without exposing token details", asyn
     .expect(401);
   assert.match(response.body.message, /session has expired/i);
 });
+
+test("call history routes require authentication", async () => {
+  const getResponse = await request(app).get("/api/calls").expect(401);
+  assert.match(getResponse.body.message, /No Token/);
+
+  const postResponse = await request(app)
+    .post("/api/calls")
+    .set("Origin", "http://localhost:5173")
+    .send({ callId: "test-call", calleeId: "507f1f77bcf86cd799439011" })
+    .expect(401);
+  assert.match(postResponse.body.message, /No Token/);
+});

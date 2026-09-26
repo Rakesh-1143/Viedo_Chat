@@ -1,0 +1,128 @@
+import mongoose from "mongoose";
+import Call, { TERMINAL_CALL_STATUSES } from "../models/Call.js";
+import User from "../models/Users.js";
+
+const UPDATABLE_STATUSES = ["accepted", "completed", "rejected", "canceled", "missed"];
+const MAX_CALL_ID_LENGTH = 128;
+const publicProfileFields = "fullName profilePic nativeLanguage learningLanguage";
+
+export async function logCallStart(req, res) {
+  try {
+    const { callId, channelId, calleeId, mode } = req.body || {};
+
+    if (typeof callId !== "string" || !callId.trim() || callId.length > MAX_CALL_ID_LENGTH) {
+      return res.status(400).json({ message: "A valid call ID is required" });
+    }
+    if (!mongoose.isValidObjectId(calleeId)) {
+      return res.status(400).json({ message: "Invalid callee ID" });
+    }
+    const isFriend = req.user.friends.some((id) => String(id) === String(calleeId));
+    if (!isFriend) {
+      return res.status(403).json({ message: "You can only call your connections" });
+    }
+
+    const callee = await User.findById(calleeId).select("_id");
+    if (!callee) return res.status(404).json({ message: "User not found" });
+
+    const call = await Call.findOneAndUpdate(
+      { callId },
+      {
+        $setOnInsert: {
+          callId,
+          channelId: typeof channelId === "string" ? channelId.slice(0, 200) : "",
+          mode: mode === "audio" ? "audio" : "video",
+          caller: req.user._id,
+          callee: calleeId,
+          status: "ringing",
+          startedAt: new Date(),
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    );
+
+    return res.status(201).json(call);
+  } catch (error) {
+    console.error("Error in logCallStart controller", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function updateCallStatus(req, res) {
+  try {
+    const { callId } = req.params;
+    const { status, durationSeconds } = req.body || {};
+
+    if (!UPDATABLE_STATUSES.includes(status)) {
+      return res.status(400).json({ message: "Invalid call status" });
+    }
+
+    const call = await Call.findOne({ callId });
+    if (!call) return res.status(404).json({ message: "Call not found" });
+
+    const isParticipant =
+      String(call.caller) === String(req.user._id) ||
+      String(call.callee) === String(req.user._id);
+    if (!isParticipant) {
+      return res.status(403).json({ message: "You are not part of this call" });
+    }
+
+    if (TERMINAL_CALL_STATUSES.includes(call.status)) {
+      return res.status(200).json(call);
+    }
+
+    call.status = status;
+    if (status === "accepted") {
+      call.connectedAt = new Date();
+    } else if (TERMINAL_CALL_STATUSES.includes(status)) {
+      call.endedAt = new Date();
+      const providedDuration = Number(durationSeconds);
+      call.durationSeconds =
+        Number.isFinite(providedDuration) && providedDuration > 0
+          ? Math.round(providedDuration)
+          : call.connectedAt
+            ? Math.max(0, Math.round((Date.now() - call.connectedAt.getTime()) / 1000))
+            : 0;
+    }
+
+    await call.save();
+    return res.status(200).json(call);
+  } catch (error) {
+    console.error("Error in updateCallStatus controller", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function getCallHistory(req, res) {
+  try {
+    const calls = await Call.find({
+      $or: [{ caller: req.user._id }, { callee: req.user._id }],
+    })
+      .sort({ startedAt: -1 })
+      .limit(50)
+      .populate("caller", publicProfileFields)
+      .populate("callee", publicProfileFields)
+      .lean();
+
+    const history = calls
+      .filter((call) => call.caller && call.callee)
+      .map((call) => {
+        const isOutgoing = String(call.caller._id) === String(req.user._id);
+        return {
+          _id: call._id,
+          callId: call.callId,
+          mode: call.mode,
+          status: call.status,
+          startedAt: call.startedAt,
+          endedAt: call.endedAt,
+          durationSeconds: call.durationSeconds,
+          direction: isOutgoing ? "outgoing" : "incoming",
+          counterpart: isOutgoing ? call.callee : call.caller,
+        };
+      });
+
+    return res.status(200).json(history);
+  } catch (error) {
+    console.error("Error in getCallHistory controller", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+}

@@ -86,3 +86,18 @@ export async function authorizeDirectCall(userId) {
   const response = await axiosInstance.post(`/chat/call/${encodeURIComponent(userId)}`);
   return response.data;
 }
+
+export async function logCallStart(payload) {
+  const response = await axiosInstance.post("/calls", payload);
+  return response.data;
+}
+
+export async function updateCallStatus(callId, payload) {
+  const response = await axiosInstance.patch(`/calls/${encodeURIComponent(callId)}`, payload);
+  return response.data;
+}
+
+export async function getCallHistory() {
+  const response = await axiosInstance.get("/calls");
+  return response.data;
+}

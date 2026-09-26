@@ -210,8 +210,8 @@ const SettingsPage = () => {
                   </p>
                 </div>
 
-                <div className="p-4 border border-error/20 rounded-xl bg-error/5 flex items-center justify-between gap-4">
-                  <div>
+                <div className="p-4 border border-error/20 rounded-xl bg-error/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="min-w-0">
                     <h3 className="font-bold">Delete this account</h3>
                     <p className="text-xs opacity-70">
                       Permanently remove your Personal Account and all of its
@@ -220,7 +220,7 @@ const SettingsPage = () => {
                   </div>
                   <button
                     onClick={() => setIsDeleteModalOpen(true)}
-                    className="btn btn-error btn-outline"
+                    className="btn btn-error btn-outline w-full sm:w-auto shrink-0"
                   >
                     Delete Account
                   </button>
