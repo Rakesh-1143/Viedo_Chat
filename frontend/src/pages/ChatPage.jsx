@@ -20,6 +20,7 @@ import {
   logCallStart,
 } from "../lib/api";
 import { formatLastSeen } from "../lib/utils";
+import { getCallErrorMessage } from "../lib/call";
 import ChatLoader from "../components/ChatLoader";
 import CallButton from "../components/CallButton";
 import StarredMessagesPanel from "../components/StarredMessagesPanel";
@@ -166,7 +167,7 @@ const ChatPage = ({ id: propId }) => {
         );
       } catch (error) {
         console.error("Failed to start call", error);
-        toast.error(error.response?.data?.message || "The call could not be started.");
+        toast.error(error.response?.data?.message || getCallErrorMessage(error));
       } finally {
         setPendingMode(null);
       }
