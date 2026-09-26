@@ -49,7 +49,7 @@ export async function getDirectConversation(req, res) {
 
     const memberIds = [String(req.user._id), String(targetUser._id)].sort();
     const channelId = memberIds.join("-");
-    await createDirectChannel(channelId, memberIds);
+    await createDirectChannel(channelId, memberIds, req.user._id);
     return res.status(200).json({ channelId, targetUser });
   } catch (error) {
     console.error("Error creating direct conversation", error.message);
