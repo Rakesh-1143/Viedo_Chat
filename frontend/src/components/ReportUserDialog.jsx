@@ -4,8 +4,10 @@ import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { FlagIcon, XIcon } from "lucide-react";
 import { reportUser } from "../lib/api";
+import useEscapeKey from "../hooks/useEscapeKey";
 
 const ReportUserDialog = ({ targetUserId, targetName, onClose }) => {
+  useEscapeKey(onClose);
   const [reason, setReason] = useState("");
 
   const { mutate: submitReport, isPending } = useMutation({

@@ -12,11 +12,13 @@ import {
   renameGroup,
 } from "../lib/api";
 import useAuthUser from "../hooks/useAuthUser";
+import useEscapeKey from "../hooks/useEscapeKey";
 
 const GroupInfoPanel = ({ channelId, onClose }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { authUser } = useAuthUser();
+  useEscapeKey(onClose);
   const [isAdding, setIsAdding] = useState(false);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [isRenaming, setIsRenaming] = useState(false);

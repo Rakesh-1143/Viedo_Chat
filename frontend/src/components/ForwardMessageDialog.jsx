@@ -6,9 +6,11 @@ import { ForwardIcon, UsersIcon, XIcon } from "lucide-react";
 import useAuthUser from "../hooks/useAuthUser";
 import { getDirectConversation, getUserFriends } from "../lib/api";
 import { streamClient } from "../lib/stream";
+import useEscapeKey from "../hooks/useEscapeKey";
 
 const ForwardMessageDialog = ({ message, onClose }) => {
   const { authUser } = useAuthUser();
+  useEscapeKey(onClose);
   const [groups, setGroups] = useState(null);
   const [selectedTarget, setSelectedTarget] = useState(null);
   const [isSending, setIsSending] = useState(false);

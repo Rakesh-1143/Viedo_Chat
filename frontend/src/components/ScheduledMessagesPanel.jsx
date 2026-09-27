@@ -8,6 +8,7 @@ import {
   createScheduledMessage,
   getScheduledMessages,
 } from "../lib/api";
+import useEscapeKey from "../hooks/useEscapeKey";
 
 const toLocalInputValue = (date) => {
   const pad = (n) => String(n).padStart(2, "0");
@@ -17,6 +18,7 @@ const toLocalInputValue = (date) => {
 };
 
 const ScheduledMessagesPanel = ({ channelId, onClose }) => {
+  useEscapeKey(onClose);
   const queryClient = useQueryClient();
   const [text, setText] = useState("");
   const [sendAt, setSendAt] = useState(() =>
