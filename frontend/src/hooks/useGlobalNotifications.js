@@ -41,8 +41,9 @@ export const useGlobalNotifications = (authUser) => {
         : channelId?.split("-").find((part) => part !== String(authUser._id));
       const chatPath = isGroup ? `/chat/group/${channelId}` : `/chat/${otherUserId}`;
       const isViewingThisChat = pathnameRef.current === chatPath;
+      const isMuted = streamClient.mutedChannels?.some((mute) => mute.channel?.cid === event.cid);
 
-      if (!isViewingThisChat) {
+      if (!isViewingThisChat && !isMuted) {
         const preview = (event.message?.text || "Sent a message").slice(0, 90);
         toast(`${event.user?.name || "New message"}: ${preview}`, { icon: "💬" });
         showNotification(event.user?.name || "New message", {

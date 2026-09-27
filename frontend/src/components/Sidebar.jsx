@@ -1,9 +1,12 @@
 import { Link, useLocation, useNavigate } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
 import {
+  ArchiveIcon,
   BellIcon,
+  BellOffIcon,
   HomeIcon,
   PhoneIcon,
+  PinIcon,
   PlusIcon,
   ShipWheelIcon,
   UsersIcon,
@@ -39,6 +42,8 @@ const Sidebar = ({ onClose }) => {
   const [unreadCounts, setUnreadCounts] = useState({});
   const [onlineUserIds, setOnlineUserIds] = useState(() => new Set());
   const [groups, setGroups] = useState([]);
+  const [pinnedChannelIds, setPinnedChannelIds] = useState(() => new Set());
+  const [mutedChannelIds, setMutedChannelIds] = useState(() => new Set());
   const [isRequestsOpen, setIsRequestsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewGroup, setShowNewGroup] = useState(false);
@@ -48,9 +53,14 @@ const Sidebar = ({ onClose }) => {
     queryFn: getUserFriends,
   });
 
-  const filteredFriends = friends.filter((friend) =>
-    friend.fullName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredFriends = friends
+    .filter((friend) => friend.fullName.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => {
+      const aPinned = pinnedChannelIds.has([authUser?._id, a._id].sort().join("-"));
+      const bPinned = pinnedChannelIds.has([authUser?._id, b._id].sort().join("-"));
+      if (aPinned === bPinned) return 0;
+      return aPinned ? -1 : 1;
+    });
 
   const { data: friendRequests } = useQuery({
     queryKey: ["friendRequests"],
@@ -112,10 +122,14 @@ const Sidebar = ({ onClose }) => {
         await connectStreamUser(authUser, tokenData.token);
 
         // Fetch initial unread counts
-        const filter = { type: "messaging", members: { $in: [authUser._id] } };
+        const filter = {
+          type: "messaging",
+          members: { $in: [authUser._id] },
+          archived: false,
+        };
         const channels = await streamClient.queryChannels(
           filter,
-          {},
+          [{ pinned_at: -1 }, { last_message_at: -1 }],
           { watch: true, state: true, presence: true },
         );
         if (disposed) return;
@@ -123,11 +137,15 @@ const Sidebar = ({ onClose }) => {
         const counts = {};
         const onlineIds = new Set();
         const groupChannels = [];
+        const pinnedIds = new Set();
+        const mutedIds = new Set();
         channels.forEach((c) => {
           counts[c.id] = c.countUnread();
           Object.values(c.state.members || {}).forEach((member) => {
             if (member.user?.online) onlineIds.add(String(member.user.id));
           });
+          if (c.state.membership?.pinned_at) pinnedIds.add(c.id);
+          if (c.muteStatus?.().muted) mutedIds.add(c.id);
           if (c.data?.is_group) {
             groupChannels.push({
               id: c.id,
@@ -139,6 +157,8 @@ const Sidebar = ({ onClose }) => {
         setUnreadCounts(counts);
         setOnlineUserIds(onlineIds);
         setGroups(groupChannels);
+        setPinnedChannelIds(pinnedIds);
+        setMutedChannelIds(mutedIds);
 
         streamClient.on(handleEvent);
       } catch (error) {
@@ -289,6 +309,20 @@ const Sidebar = ({ onClose }) => {
           <span>Call History</span>
         </button>
 
+        {/* ARCHIVED CHATS BUTTON */}
+        <button
+          onClick={() => {
+            if (onClose) onClose();
+            navigate("/archived");
+          }}
+          className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case relative ${
+            currentPath === "/archived" ? "btn-active" : ""
+          }`}
+        >
+          <ArchiveIcon className="size-5 text-base-content opacity-70" />
+          <span>Archived Chats</span>
+        </button>
+
         {/* NEW GROUP BUTTON */}
         <button
           onClick={() => setShowNewGroup(true)}
@@ -346,6 +380,8 @@ const Sidebar = ({ onClose }) => {
               const channelId = [authUser._id, friend._id].sort().join("-");
               const unreadCount = unreadCounts[channelId] || 0;
               const isOnline = onlineUserIds.has(String(friend._id));
+              const isPinned = pinnedChannelIds.has(channelId);
+              const isMuted = mutedChannelIds.has(channelId);
 
               return (
                 <button
@@ -376,8 +412,14 @@ const Sidebar = ({ onClose }) => {
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
+                    <p className="text-sm font-medium truncate flex items-center gap-1.5">
                       {friend.fullName}
+                      {isPinned && (
+                        <PinIcon className="size-3 opacity-50 shrink-0" aria-label="Pinned" />
+                      )}
+                      {isMuted && (
+                        <BellOffIcon className="size-3 opacity-50 shrink-0" aria-label="Muted" />
+                      )}
                     </p>
                     <p className={`text-xs ${isOnline ? "text-success" : "opacity-50"}`}>
                       {isOnline ? "Online" : "Offline"}
@@ -408,6 +450,8 @@ const Sidebar = ({ onClose }) => {
               {groups.map((group) => {
                 const unreadCount = unreadCounts[group.id] || 0;
                 const isActive = currentPath === `/chat/group/${group.id}`;
+                const isPinned = pinnedChannelIds.has(group.id);
+                const isMuted = mutedChannelIds.has(group.id);
 
                 return (
                   <button
@@ -428,7 +472,15 @@ const Sidebar = ({ onClose }) => {
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{group.name}</p>
+                      <p className="text-sm font-medium truncate flex items-center gap-1.5">
+                        {group.name}
+                        {isPinned && (
+                          <PinIcon className="size-3 opacity-50 shrink-0" aria-label="Pinned" />
+                        )}
+                        {isMuted && (
+                          <BellOffIcon className="size-3 opacity-50 shrink-0" aria-label="Muted" />
+                        )}
+                      </p>
                       <p className="text-xs opacity-50">{group.memberCount} members</p>
                     </div>
                     {unreadCount > 0 && (

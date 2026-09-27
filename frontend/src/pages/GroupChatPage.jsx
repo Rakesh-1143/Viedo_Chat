@@ -12,9 +12,16 @@ import {
 } from "stream-chat-react";
 import toast from "react-hot-toast";
 import {
+  ArchiveIcon,
   ArrowLeftIcon,
+  BellIcon,
+  BellOffIcon,
+  DownloadIcon,
   ImageIcon,
   InfoIcon,
+  PaletteIcon,
+  PinIcon,
+  PinOffIcon,
   SearchIcon,
   StarIcon,
   UsersIcon,
@@ -23,6 +30,8 @@ import useAuthUser from "../hooks/useAuthUser";
 import { authorizeGroupCall, getStreamToken, logCallStart } from "../lib/api";
 import { connectStreamUser, streamClient } from "../lib/stream";
 import { getCallErrorMessage } from "../lib/call";
+import { getWallpaper, setWallpaper } from "../lib/wallpaper";
+import { useConversationActions } from "../hooks/useConversationActions";
 import { useVideoClient } from "../providers/videoContext";
 import ChatLoader from "../components/ChatLoader";
 import CallButton from "../components/CallButton";
@@ -31,6 +40,7 @@ import MediaGalleryPanel from "../components/MediaGalleryPanel";
 import GroupInfoPanel from "../components/GroupInfoPanel";
 import ChatSearchPanel from "../components/ChatSearchPanel";
 import ChatOptionsMenu from "../components/ChatOptionsMenu";
+import WallpaperPicker from "../components/WallpaperPicker";
 import WhatsAppMessageStatus from "../components/WhatsAppMessageStatus";
 
 const GroupChatPage = () => {
@@ -44,7 +54,15 @@ const GroupChatPage = () => {
   const [showMedia, setShowMedia] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [showWallpaper, setShowWallpaper] = useState(false);
+  const [wallpaper, setWallpaperState] = useState(null);
   const [pendingMode, setPendingMode] = useState(null);
+  const { isPinned, isMuted, togglePin, toggleMute, archiveConversation, exportHistory } =
+    useConversationActions(channel);
+
+  useEffect(() => {
+    if (channel) setWallpaperState(getWallpaper(channel.id));
+  }, [channel]);
 
   const {
     data: tokenData,
@@ -186,7 +204,7 @@ const GroupChatPage = () => {
   const groupName = channel.data?.name || "Group";
 
   return (
-    <div className="chat-workspace">
+    <div className="chat-workspace" style={{ "--chat-wallpaper": wallpaper || undefined }}>
       <Chat client={streamClient}>
         <Channel channel={channel} MessageStatus={WhatsAppMessageStatus}>
           <Window>
@@ -241,6 +259,36 @@ const GroupChatPage = () => {
                     onSelect: () => setShowMedia(true),
                   },
                   {
+                    key: "pin",
+                    label: isPinned ? "Unpin conversation" : "Pin conversation",
+                    icon: isPinned ? PinOffIcon : PinIcon,
+                    onSelect: togglePin,
+                  },
+                  {
+                    key: "mute",
+                    label: isMuted ? "Unmute notifications" : "Mute notifications",
+                    icon: isMuted ? BellIcon : BellOffIcon,
+                    onSelect: toggleMute,
+                  },
+                  {
+                    key: "wallpaper",
+                    label: "Chat wallpaper",
+                    icon: PaletteIcon,
+                    onSelect: () => setShowWallpaper(true),
+                  },
+                  {
+                    key: "export",
+                    label: "Export conversation",
+                    icon: DownloadIcon,
+                    onSelect: () => exportHistory(groupName),
+                  },
+                  {
+                    key: "archive",
+                    label: "Archive conversation",
+                    icon: ArchiveIcon,
+                    onSelect: () => archiveConversation(() => navigate("/")),
+                  },
+                  {
                     key: "info",
                     label: "Group info",
                     icon: InfoIcon,
@@ -264,6 +312,17 @@ const GroupChatPage = () => {
       )}
       {showMedia && <MediaGalleryPanel channel={channel} onClose={() => setShowMedia(false)} />}
       {showInfo && <GroupInfoPanel channelId={channelId} onClose={() => setShowInfo(false)} />}
+      {showWallpaper && (
+        <WallpaperPicker
+          current={wallpaper}
+          onSelect={(value) => {
+            setWallpaperState(value);
+            setWallpaper(channel.id, value);
+            setShowWallpaper(false);
+          }}
+          onClose={() => setShowWallpaper(false)}
+        />
+      )}
     </div>
   );
 };

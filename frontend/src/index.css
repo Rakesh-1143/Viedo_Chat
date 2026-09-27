@@ -470,10 +470,12 @@ textarea:focus-visible {
   right: 0;
   z-index: 5;
   display: flex;
-  width: 12rem;
+  width: 13rem;
+  max-height: min(22rem, 70vh);
   flex-direction: column;
   gap: 0.15rem;
   padding: 0.4rem;
+  overflow-y: auto;
   list-style: none;
   border: 1px solid var(--color-base-300);
   border-radius: 0.75rem;
@@ -738,6 +740,32 @@ textarea:focus-visible {
 
 .wa-tick--read {
   color: #34b7f1;
+}
+
+/* Wallpaper picker */
+.wallpaper-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+}
+
+.wallpaper-picker__swatch {
+  display: grid;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 2px solid var(--color-base-300);
+  border-radius: 0.65rem;
+  color: var(--color-base-content);
+  cursor: pointer;
+}
+
+.wallpaper-picker__swatch svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.chat-workspace .str-chat__list {
+  background-color: var(--chat-wallpaper, var(--color-base-100));
 }
 
 /* Generic centered dialog (used instead of daisyUI's modal, whose div-based
