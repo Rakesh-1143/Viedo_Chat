@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Call, { TERMINAL_CALL_STATUSES } from "../models/Call.js";
 import User from "../models/Users.js";
 import { getGroupChannel } from "../lib/stream.js";
+import { sendPushToUser } from "../lib/push.js";
 
 const UPDATABLE_STATUSES = ["accepted", "completed", "rejected", "canceled", "missed"];
 const MAX_CALL_ID_LENGTH = 128;
@@ -37,6 +38,16 @@ async function logGroupCallStart(req, res, { callId, channelId, mode }) {
     },
     { upsert: true, new: true, setDefaultsOnInsert: true },
   );
+
+  memberIds
+    .filter((id) => id !== String(req.user._id))
+    .forEach((id) => {
+      sendPushToUser(id, {
+        title: `${req.user.fullName} started a ${mode === "audio" ? "call" : "video call"}`,
+        body: `In ${channel.data?.name || "a group"}`,
+        url: `/call/${callId}`,
+      }).catch((error) => console.error("Failed to push group call notice", error.message));
+    });
 
   return res.status(201).json(call);
 }
@@ -79,6 +90,12 @@ export async function logCallStart(req, res) {
       },
       { upsert: true, new: true, setDefaultsOnInsert: true },
     );
+
+    sendPushToUser(calleeId, {
+      title: `${req.user.fullName} is calling you`,
+      body: mode === "audio" ? "Incoming audio call" : "Incoming video call",
+      url: `/call/${callId}`,
+    }).catch((error) => console.error("Failed to push call notice", error.message));
 
     return res.status(201).json(call);
   } catch (error) {

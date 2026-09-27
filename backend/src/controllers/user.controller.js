@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import User from "../models/Users.js";
 import FriendRequest from "../models/FriendRequest.js";
 import Report from "../models/Report.js";
+import { sendPushToUser } from "../lib/push.js";
 import {
   cleanText,
   escapeRegex,
@@ -110,6 +111,13 @@ export async function sendFriendRequest(req, res) {
       sender: myId,
       recipient: recipientId,
     });
+
+    sendPushToUser(recipientId, {
+      title: `${req.user.fullName} sent you a friend request`,
+      body: "Open Streamify to accept or decline.",
+      url: "/notifications",
+    }).catch((error) => console.error("Failed to push friend request notice", error.message));
+
     return res.status(201).json(friendRequest);
   } catch (error) {
     if (error?.code === 11000) {
@@ -145,6 +153,12 @@ export async function acceptFriendRequest(req, res) {
         $addToSet: { friends: friendRequest.sender },
       }),
     ]);
+
+    sendPushToUser(friendRequest.sender, {
+      title: `${req.user.fullName} accepted your friend request`,
+      body: "You're now connected on Streamify.",
+      url: "/notifications",
+    }).catch((error) => console.error("Failed to push friend accept notice", error.message));
 
     return res.status(200).json({ message: "Connection accepted" });
   } catch (error) {

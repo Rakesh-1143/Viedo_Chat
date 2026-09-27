@@ -10,6 +10,7 @@ import userRoutes from "./routes/user.router.js";
 import chatRoutes from "./routes/chat.route.js";
 import callRoutes from "./routes/call.route.js";
 import adminRoutes from "./routes/admin.route.js";
+import pushRoutes from "./routes/push.route.js";
 import { getAllowedOrigins } from "./config/env.js";
 import { errorHandler, notFound } from "./middleware/error.middleware.js";
 
@@ -89,6 +90,7 @@ export const createApp = () => {
   app.use("/api/chat", chatRoutes);
   app.use("/api/calls", callRoutes);
   app.use("/api/admin", adminRoutes);
+  app.use("/api/push", pushRoutes);
   app.use("/api", notFound);
 
   if (process.env.NODE_ENV === "production") {

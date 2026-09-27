@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -33,6 +33,12 @@ import {
   isNotificationSupported,
   requestNotificationPermission,
 } from "../lib/notifications";
+import {
+  disablePushNotifications,
+  enablePushNotifications,
+  getPushSubscription,
+  isPushSupported,
+} from "../lib/push";
 import { formatUserAgent } from "../lib/utils";
 
 const SettingsPage = () => {
@@ -92,6 +98,34 @@ const SettingsPage = () => {
   const [notificationPermission, setNotificationPermission] = useState(() =>
     getNotificationPermission(),
   );
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [isPushBusy, setIsPushBusy] = useState(false);
+
+  useEffect(() => {
+    if (!isPushSupported()) return;
+    getPushSubscription()
+      .then((subscription) => setPushEnabled(Boolean(subscription)))
+      .catch(() => undefined);
+  }, []);
+
+  const handleTogglePush = async () => {
+    setIsPushBusy(true);
+    try {
+      if (pushEnabled) {
+        await disablePushNotifications();
+        setPushEnabled(false);
+        toast.success("Background notifications turned off");
+      } else {
+        await enablePushNotifications();
+        setPushEnabled(true);
+        toast.success("Background notifications enabled");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not update push notifications");
+    } finally {
+      setIsPushBusy(false);
+    }
+  };
 
   const { data: blockedUsers = [], isLoading: blockedLoading } = useQuery({
     queryKey: ["blockedUsers"],
@@ -384,6 +418,45 @@ const SettingsPage = () => {
                 ) : (
                   <button className="btn btn-primary" onClick={handleEnableNotifications}>
                     Enable Notifications
+                  </button>
+                )}
+
+                <div className="divider" />
+
+                <div>
+                  <h2 className="text-xl font-bold mb-1">Background Push Notifications</h2>
+                  <p className="text-sm opacity-70">
+                    Keep getting notified about new messages, calls, and friend requests even
+                    when Streamify isn't open in any tab.
+                  </p>
+                </div>
+
+                {!isPushSupported() ? (
+                  <p className="text-sm opacity-70">
+                    Your browser doesn't support background push notifications.
+                  </p>
+                ) : pushEnabled ? (
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <div className="p-4 border border-success/20 rounded-xl bg-success/5 flex-1">
+                      <p className="text-sm font-semibold text-success">
+                        Background notifications are enabled
+                      </p>
+                    </div>
+                    <button
+                      className="btn btn-outline btn-sm shrink-0"
+                      disabled={isPushBusy}
+                      onClick={handleTogglePush}
+                    >
+                      Turn off
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    className="btn btn-primary"
+                    disabled={isPushBusy}
+                    onClick={handleTogglePush}
+                  >
+                    {isPushBusy ? "Enabling..." : "Enable Background Notifications"}
                   </button>
                 )}
               </div>
