@@ -41,6 +41,7 @@ import GroupInfoPanel from "../components/GroupInfoPanel";
 import ChatSearchPanel from "../components/ChatSearchPanel";
 import ChatOptionsMenu from "../components/ChatOptionsMenu";
 import WallpaperPicker from "../components/WallpaperPicker";
+import ForwardMessageDialog from "../components/ForwardMessageDialog";
 import WhatsAppMessageStatus from "../components/WhatsAppMessageStatus";
 
 const GroupChatPage = () => {
@@ -56,6 +57,7 @@ const GroupChatPage = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [showWallpaper, setShowWallpaper] = useState(false);
   const [wallpaper, setWallpaperState] = useState(null);
+  const [forwardMessage, setForwardMessage] = useState(null);
   const [pendingMode, setPendingMode] = useState(null);
   const { isPinned, isMuted, togglePin, toggleMute, archiveConversation, exportHistory } =
     useConversationActions(channel);
@@ -297,7 +299,12 @@ const GroupChatPage = () => {
                 ]}
               />
             </header>
-            <MessageList returnAllReadData />
+            <MessageList
+              returnAllReadData
+              customMessageActions={{
+                Forward: (message) => setForwardMessage(message),
+              }}
+            />
             <TypingIndicator />
             <MessageInput focus audioRecordingEnabled />
             {showSearch && (
@@ -321,6 +328,12 @@ const GroupChatPage = () => {
             setShowWallpaper(false);
           }}
           onClose={() => setShowWallpaper(false)}
+        />
+      )}
+      {forwardMessage && (
+        <ForwardMessageDialog
+          message={forwardMessage}
+          onClose={() => setForwardMessage(null)}
         />
       )}
     </div>
