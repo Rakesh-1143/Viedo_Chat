@@ -10,7 +10,13 @@ import {
   getStreamToken,
   removeGroupMember,
   renameGroup,
+  setDisappearingMessages,
 } from "../controllers/chat.controller.js";
+import {
+  cancelScheduledMessage,
+  createScheduledMessage,
+  getScheduledMessages,
+} from "../controllers/scheduledMessage.controller.js";
 
 const router = express.Router();
 
@@ -23,5 +29,9 @@ router.patch("/group/:channelId", protectRoute, renameGroup);
 router.post("/group/:channelId/members", protectRoute, addGroupMembers);
 router.delete("/group/:channelId/members/:userId", protectRoute, removeGroupMember);
 router.post("/group/:channelId/call", protectRoute, authorizeGroupCall);
+router.patch("/:channelId/disappearing", protectRoute, setDisappearingMessages);
+router.post("/scheduled-messages", protectRoute, createScheduledMessage);
+router.get("/scheduled-messages", protectRoute, getScheduledMessages);
+router.delete("/scheduled-messages/:id", protectRoute, cancelScheduledMessage);
 
 export default router;

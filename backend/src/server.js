@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import connectDB from "./lib/db.js";
 import { createApp } from "./app.js";
 import { assertRequiredEnvironment } from "./config/env.js";
+import { startMessageSchedulerJobs } from "./jobs/messageScheduler.js";
 
 const PORT = process.env.PORT || 5001;
 
@@ -15,12 +16,14 @@ const startServer = async () => {
     const server = app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
+    const stopSchedulerJobs = startMessageSchedulerJobs();
 
     let isShuttingDown = false;
     const shutdown = (signal) => {
       if (isShuttingDown) return;
       isShuttingDown = true;
       console.log(`${signal} received. Closing HTTP server.`);
+      stopSchedulerJobs();
       const forceExit = setTimeout(() => {
         console.error("Graceful shutdown timed out.");
         process.exit(1);

@@ -163,3 +163,34 @@ export async function getCallHistory() {
   const response = await axiosInstance.get("/calls");
   return response.data;
 }
+
+export async function setDisappearingMessages(channelId, durationSeconds) {
+  const response = await axiosInstance.patch(
+    `/chat/${encodeURIComponent(channelId)}/disappearing`,
+    { durationSeconds },
+  );
+  return response.data;
+}
+
+export async function createScheduledMessage({ channelId, text, sendAt }) {
+  const response = await axiosInstance.post("/chat/scheduled-messages", {
+    channelId,
+    text,
+    sendAt,
+  });
+  return response.data;
+}
+
+export async function getScheduledMessages(channelId) {
+  const response = await axiosInstance.get("/chat/scheduled-messages", {
+    params: { channelId },
+  });
+  return response.data;
+}
+
+export async function cancelScheduledMessage(id) {
+  const response = await axiosInstance.delete(
+    `/chat/scheduled-messages/${encodeURIComponent(id)}`,
+  );
+  return response.data;
+}
