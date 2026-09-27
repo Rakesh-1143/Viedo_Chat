@@ -4,6 +4,7 @@ import User from "../models/Users.js";
 import FriendRequest from "../models/FriendRequest.js";
 import Session from "../models/Session.js";
 import { deleteStreamUser, upsertStreamUser } from "../lib/stream.js";
+import { sendWelcomeEmail } from "../lib/email.js";
 import { clearAuthCookie, issueAuthCookie } from "../utils/auth.js";
 import {
   cleanText,
@@ -88,6 +89,11 @@ export async function signup(req, res) {
     }
 
     await startSession(req, res, newUser._id);
+
+    sendWelcomeEmail(newUser).catch((error) =>
+      console.error("Failed to send welcome email", error.message),
+    );
+
     return res.status(201).json({ success: true, user: publicUser(newUser) });
   } catch (error) {
     if (error?.code === 11000) {
