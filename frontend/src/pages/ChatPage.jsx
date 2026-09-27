@@ -12,9 +12,16 @@ import {
 } from "stream-chat-react";
 import toast from "react-hot-toast";
 import {
+  ArchiveIcon,
   ArrowLeftIcon,
+  BellIcon,
+  BellOffIcon,
+  DownloadIcon,
   FlagIcon,
   ImageIcon,
+  PaletteIcon,
+  PinIcon,
+  PinOffIcon,
   SearchIcon,
   ShieldBanIcon,
   StarIcon,
@@ -29,6 +36,8 @@ import {
 } from "../lib/api";
 import { formatLastSeen } from "../lib/utils";
 import { getCallErrorMessage } from "../lib/call";
+import { getWallpaper, setWallpaper } from "../lib/wallpaper";
+import { useConversationActions } from "../hooks/useConversationActions";
 import ChatLoader from "../components/ChatLoader";
 import CallButton from "../components/CallButton";
 import StarredMessagesPanel from "../components/StarredMessagesPanel";
@@ -36,6 +45,7 @@ import MediaGalleryPanel from "../components/MediaGalleryPanel";
 import ChatSearchPanel from "../components/ChatSearchPanel";
 import ChatOptionsMenu from "../components/ChatOptionsMenu";
 import ReportUserDialog from "../components/ReportUserDialog";
+import WallpaperPicker from "../components/WallpaperPicker";
 import WhatsAppMessageStatus from "../components/WhatsAppMessageStatus";
 import { connectStreamUser, streamClient } from "../lib/stream";
 import { useVideoClient } from "../providers/videoContext";
@@ -56,6 +66,14 @@ const ChatPage = ({ id: propId }) => {
   const [showMedia, setShowMedia] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [showWallpaper, setShowWallpaper] = useState(false);
+  const [wallpaper, setWallpaperState] = useState(null);
+  const { isPinned, isMuted, togglePin, toggleMute, archiveConversation, exportHistory } =
+    useConversationActions(channel);
+
+  useEffect(() => {
+    if (channel) setWallpaperState(getWallpaper(channel.id));
+  }, [channel]);
 
   const { mutate: blockMutation } = useMutation({
     mutationFn: blockUser,
@@ -240,7 +258,7 @@ const ChatPage = ({ id: propId }) => {
   const targetUser = conversation.targetUser;
 
   return (
-    <div className="chat-workspace">
+    <div className="chat-workspace" style={{ "--chat-wallpaper": wallpaper || undefined }}>
       <Chat client={streamClient}>
         <Channel channel={channel} MessageStatus={WhatsAppMessageStatus}>
           <Window>
@@ -298,6 +316,36 @@ const ChatPage = ({ id: propId }) => {
                     onSelect: () => setShowMedia(true),
                   },
                   {
+                    key: "pin",
+                    label: isPinned ? "Unpin conversation" : "Pin conversation",
+                    icon: isPinned ? PinOffIcon : PinIcon,
+                    onSelect: togglePin,
+                  },
+                  {
+                    key: "mute",
+                    label: isMuted ? "Unmute notifications" : "Mute notifications",
+                    icon: isMuted ? BellIcon : BellOffIcon,
+                    onSelect: toggleMute,
+                  },
+                  {
+                    key: "wallpaper",
+                    label: "Chat wallpaper",
+                    icon: PaletteIcon,
+                    onSelect: () => setShowWallpaper(true),
+                  },
+                  {
+                    key: "export",
+                    label: "Export conversation",
+                    icon: DownloadIcon,
+                    onSelect: () => exportHistory(targetUser.fullName),
+                  },
+                  {
+                    key: "archive",
+                    label: "Archive conversation",
+                    icon: ArchiveIcon,
+                    onSelect: () => archiveConversation(() => navigate("/")),
+                  },
+                  {
                     key: "report",
                     label: "Report user",
                     icon: FlagIcon,
@@ -340,6 +388,17 @@ const ChatPage = ({ id: propId }) => {
           targetUserId={targetUser._id}
           targetName={targetUser.fullName}
           onClose={() => setShowReport(false)}
+        />
+      )}
+      {showWallpaper && (
+        <WallpaperPicker
+          current={wallpaper}
+          onSelect={(value) => {
+            setWallpaperState(value);
+            setWallpaper(channel.id, value);
+            setShowWallpaper(false);
+          }}
+          onClose={() => setShowWallpaper(false)}
         />
       )}
     </div>
