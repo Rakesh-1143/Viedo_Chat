@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { SearchIcon, XIcon } from "lucide-react";
 import { useChannelActionContext } from "stream-chat-react";
+import useEscapeKey from "../hooks/useEscapeKey";
 
 const SEARCH_DEBOUNCE_MS = 350;
 
 const ChatSearchPanel = ({ channel, onClose }) => {
   const { jumpToMessage } = useChannelActionContext("ChatSearchPanel");
+  useEscapeKey(onClose);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);

@@ -1,8 +1,10 @@
 import { createPortal } from "react-dom";
 import { CheckIcon, PaletteIcon, XIcon } from "lucide-react";
 import { WALLPAPER_OPTIONS } from "../lib/wallpaper";
+import useEscapeKey from "../hooks/useEscapeKey";
 
 const WallpaperPicker = ({ current, onSelect, onClose }) => {
+  useEscapeKey(onClose);
   return createPortal(
     <div className="app-dialog" role="dialog" aria-modal="true" aria-label="Chat wallpaper">
       <button

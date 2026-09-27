@@ -39,6 +39,7 @@ import {
   getPushSubscription,
   isPushSupported,
 } from "../lib/push";
+import useEscapeKey from "../hooks/useEscapeKey";
 import { formatUserAgent } from "../lib/utils";
 
 const SettingsPage = () => {
@@ -51,6 +52,12 @@ const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState("password"); // 'password', 'profile', 'notifications', 'blocked', 'sessions', 'danger'
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteReason, setDeleteReason] = useState("");
+  useEscapeKey(() => {
+    if (isDeleteModalOpen) {
+      setIsDeleteModalOpen(false);
+      setDeleteReason("");
+    }
+  });
 
   const [bio, setBio] = useState(authUser?.bio || "");
 

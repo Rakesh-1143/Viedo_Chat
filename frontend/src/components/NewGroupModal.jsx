@@ -5,9 +5,11 @@ import { useNavigate } from "react-router";
 import toast from "react-hot-toast";
 import { UsersIcon, XIcon } from "lucide-react";
 import { createGroupChat, getUserFriends } from "../lib/api";
+import useEscapeKey from "../hooks/useEscapeKey";
 
 const NewGroupModal = ({ onClose }) => {
   const navigate = useNavigate();
+  useEscapeKey(onClose);
   const [name, setName] = useState("");
   const [selectedIds, setSelectedIds] = useState(() => new Set());
 

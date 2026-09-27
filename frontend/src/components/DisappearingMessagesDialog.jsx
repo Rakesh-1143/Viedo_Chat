@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { TimerIcon, XIcon } from "lucide-react";
 import { setDisappearingMessages } from "../lib/api";
+import useEscapeKey from "../hooks/useEscapeKey";
 
 const OPTIONS = [
   { label: "Off", value: 0 },
@@ -14,6 +15,7 @@ const OPTIONS = [
 
 const DisappearingMessagesDialog = ({ channelId, current, onUpdated, onClose }) => {
   const [selected, setSelected] = useState(current || 0);
+  useEscapeKey(onClose);
 
   const { mutate: saveMutation, isPending } = useMutation({
     mutationFn: () => setDisappearingMessages(channelId, selected),

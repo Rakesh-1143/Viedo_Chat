@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { StarIcon, XIcon } from "lucide-react";
+import useEscapeKey from "../hooks/useEscapeKey";
 
 const StarredMessagesPanel = ({ channel, onClose }) => {
+  useEscapeKey(onClose);
   const [pinned, setPinned] = useState([]);
 
   useEffect(() => {

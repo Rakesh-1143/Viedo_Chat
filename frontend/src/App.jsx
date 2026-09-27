@@ -5,6 +5,7 @@ import Layout from "./components/Layout.jsx";
 import PageLoader from "./components/PageLoader.jsx";
 import useAuthUser from "./hooks/useAuthUser.js";
 import { useGlobalNotifications } from "./hooks/useGlobalNotifications.js";
+import { useGlobalShortcuts } from "./hooks/useGlobalShortcuts.js";
 import { useThemeStore } from "./store/useThemeStore.js";
 
 const HomePage = lazy(() => import("./pages/HomePage.jsx"));
@@ -24,6 +25,11 @@ const VideoProvider = lazy(() => import("./providers/VideoProvider.jsx"));
 
 const GlobalNotifications = ({ authUser }) => {
   useGlobalNotifications(authUser);
+  return null;
+};
+
+const GlobalShortcuts = () => {
+  useGlobalShortcuts();
   return null;
 };
 
@@ -215,6 +221,7 @@ const App = () => {
         <Suspense fallback={<PageLoader />}>
           <VideoProvider authUser={authUser}>
             <GlobalNotifications authUser={authUser} />
+            <GlobalShortcuts />
             {routes}
           </VideoProvider>
         </Suspense>

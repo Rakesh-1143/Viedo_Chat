@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { XIcon } from "lucide-react";
+import useEscapeKey from "../hooks/useEscapeKey";
 
 const PAGE_SIZE = 30;
 
@@ -19,6 +20,7 @@ const extractImages = (messages) => {
 };
 
 const MediaGalleryPanel = ({ channel, onClose }) => {
+  useEscapeKey(onClose);
   const [messages, setMessages] = useState([]);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);

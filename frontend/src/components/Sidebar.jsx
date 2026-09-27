@@ -369,7 +369,8 @@ const Sidebar = ({ onClose }) => {
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-base-content/30 group-focus-within:text-primary transition-colors" />
               <input
                 type="text"
-                placeholder="Search friends..."
+                data-sidebar-search
+                placeholder="Search friends... (Ctrl+K)"
                 className="input input-bordered input-sm w-full rounded-lg bg-base-200 pl-9 transition-colors focus:bg-base-100"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
