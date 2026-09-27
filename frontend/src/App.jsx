@@ -14,6 +14,7 @@ const NotificationsPage = lazy(() => import("./pages/NotificationsPage.jsx"));
 const CallPage = lazy(() => import("./pages/CallPage.jsx"));
 const CallHistoryPage = lazy(() => import("./pages/CallHistoryPage.jsx"));
 const ArchivedChatsPage = lazy(() => import("./pages/ArchivedChatsPage.jsx"));
+const AdminReportsPage = lazy(() => import("./pages/AdminReportsPage.jsx"));
 const ChatPage = lazy(() => import("./pages/ChatPage.jsx"));
 const GroupChatPage = lazy(() => import("./pages/GroupChatPage.jsx"));
 const OnboardingPage = lazy(() => import("./pages/OnboardingPage.jsx"));
@@ -127,6 +128,19 @@ const AppRoutes = ({ isAuthenticated, hasCompletedOnboarding }) => (
           >
             <Layout showSidebar>
               <ArchivedChatsPage />
+            </Layout>
+          </ProtectedPage>
+        }
+      />
+      <Route
+        path="/admin/reports"
+        element={
+          <ProtectedPage
+            isAuthenticated={isAuthenticated}
+            hasCompletedOnboarding={hasCompletedOnboarding}
+          >
+            <Layout showSidebar>
+              <AdminReportsPage />
             </Layout>
           </ProtectedPage>
         }

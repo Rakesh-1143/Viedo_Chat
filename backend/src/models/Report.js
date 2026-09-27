@@ -17,6 +17,11 @@ const reportSchema = new mongoose.Schema(
       required: true,
       maxlength: 500,
     },
+    status: {
+      type: String,
+      enum: ["open", "dismissed", "actioned"],
+      default: "open",
+    },
   },
   { timestamps: true },
 );

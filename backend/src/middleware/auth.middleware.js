@@ -20,6 +20,9 @@ export const protectRoute = async (req, res, next) => {
     if (!user) {
       return res.status(401).json({ message: "Unauthorized - User not found" });
     }
+    if (user.banned) {
+      return res.status(403).json({ message: "This account has been suspended." });
+    }
 
     if (decoded.jti) {
       const session = await Session.findOne({ jti: decoded.jti, revokedAt: null }).select(
@@ -45,4 +48,11 @@ export const protectRoute = async (req, res, next) => {
     console.error("Error in protectRoute middleware", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
   }
+};
+
+export const protectAdminRoute = (req, res, next) => {
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({ message: "Admin access required" });
+  }
+  next();
 };

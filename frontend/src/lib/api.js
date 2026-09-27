@@ -214,3 +214,23 @@ export async function revokeOtherSessions() {
   const response = await axiosInstance.delete("/auth/sessions/others");
   return response.data;
 }
+
+export async function getReports() {
+  const response = await axiosInstance.get("/admin/reports");
+  return response.data;
+}
+
+export async function dismissReport(id) {
+  const response = await axiosInstance.post(`/admin/reports/${encodeURIComponent(id)}/dismiss`);
+  return response.data;
+}
+
+export async function banReportedUser(id) {
+  const response = await axiosInstance.post(`/admin/reports/${encodeURIComponent(id)}/ban`);
+  return response.data;
+}
+
+export async function unbanUser(id) {
+  const response = await axiosInstance.post(`/admin/users/${encodeURIComponent(id)}/unban`);
+  return response.data;
+}
