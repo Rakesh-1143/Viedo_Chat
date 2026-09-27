@@ -8,6 +8,7 @@ import {
   PhoneIcon,
   PinIcon,
   PlusIcon,
+  ShieldAlertIcon,
   ShipWheelIcon,
   UsersIcon,
   SearchIcon,
@@ -331,6 +332,22 @@ const Sidebar = ({ onClose }) => {
           <PlusIcon className="size-5 text-base-content opacity-70" />
           <span>New Group</span>
         </button>
+
+        {/* ADMIN REPORTS BUTTON */}
+        {authUser?.role === "admin" && (
+          <button
+            onClick={() => {
+              if (onClose) onClose();
+              navigate("/admin/reports");
+            }}
+            className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case relative ${
+              currentPath === "/admin/reports" ? "btn-active" : ""
+            }`}
+          >
+            <ShieldAlertIcon className="size-5 text-base-content opacity-70" />
+            <span>User Reports</span>
+          </button>
+        )}
       </nav>
 
       {/* FRIENDS SECTION */}

@@ -28,6 +28,18 @@ const startSession = async (req, res, userId) => {
   });
 };
 
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
+  .split(",")
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
+
+const ensureAdminRole = async (user) => {
+  if (user.role === "admin" || !ADMIN_EMAILS.includes(user.email)) return user;
+  user.role = "admin";
+  await user.save();
+  return user;
+};
+
 export async function signup(req, res) {
   const fullName = cleanText(req.body.fullName, 80);
   const email = normalizeEmail(req.body.email);
@@ -63,6 +75,7 @@ export async function signup(req, res) {
       phoneNumber,
       profilePic,
     });
+    await ensureAdminRole(newUser);
 
     try {
       await upsertStreamUser({
@@ -97,6 +110,10 @@ export async function login(req, res) {
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
+    if (user.banned) {
+      return res.status(403).json({ message: "This account has been suspended." });
+    }
+    await ensureAdminRole(user);
 
     try {
       await upsertStreamUser({
