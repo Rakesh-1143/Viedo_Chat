@@ -5,6 +5,7 @@ import {
   PhoneIcon,
   PhoneMissedIcon,
   PhoneOffIcon,
+  UsersIcon,
   VideoIcon,
 } from "lucide-react";
 import { getCallHistory } from "../lib/api";
@@ -79,18 +80,26 @@ const CallHistoryPage = () => {
               return (
                 <div key={call._id} className="card bg-base-200 shadow-sm">
                   <div className="card-body p-4 flex-row items-center gap-3">
-                    <div className="avatar size-11 rounded-full overflow-hidden bg-base-300 shrink-0">
-                      <img
-                        src={call.counterpart?.profilePic}
-                        alt={call.counterpart?.fullName || "User"}
-                        onError={(e) => {
-                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(call.counterpart?.fullName || "User")}&background=random`;
-                        }}
-                      />
-                    </div>
+                    {call.isGroupCall ? (
+                      <div className="conversation-avatar conversation-avatar--group size-11 shrink-0">
+                        <UsersIcon aria-hidden="true" />
+                      </div>
+                    ) : (
+                      <div className="avatar size-11 rounded-full overflow-hidden bg-base-300 shrink-0">
+                        <img
+                          src={call.counterpart?.profilePic}
+                          alt={call.counterpart?.fullName || "User"}
+                          onError={(e) => {
+                            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(call.counterpart?.fullName || "User")}&background=random`;
+                          }}
+                        />
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold truncate">
-                        {call.counterpart?.fullName || "Unknown"}
+                        {call.isGroupCall
+                          ? call.groupName || "Group"
+                          : call.counterpart?.fullName || "Unknown"}
                       </p>
                       <p
                         className={`text-xs flex items-center gap-1 ${
@@ -111,7 +120,17 @@ const CallHistoryPage = () => {
                       <span className="text-xs opacity-50 whitespace-nowrap">
                         {formatWhen(call.startedAt)}
                       </span>
-                      {call.counterpart?._id && (
+                      {call.isGroupCall && call.channelId && (
+                        <Link
+                          to={`/chat/group/${call.channelId}`}
+                          className="icon-button"
+                          aria-label={`Message ${call.groupName || "group"}`}
+                          title="Message"
+                        >
+                          <MessageSquareIcon className="size-4" aria-hidden="true" />
+                        </Link>
+                      )}
+                      {!call.isGroupCall && call.counterpart?._id && (
                         <Link
                           to={`/chat/${call.counterpart._id}`}
                           className="icon-button"

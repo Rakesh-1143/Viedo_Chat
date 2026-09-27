@@ -3,6 +3,7 @@ import { protectRoute } from "../middleware/auth.middleware.js";
 import {
   addGroupMembers,
   authorizeDirectCall,
+  authorizeGroupCall,
   createGroup,
   getDirectConversation,
   getGroupInfo,
@@ -21,5 +22,6 @@ router.get("/group/:channelId", protectRoute, getGroupInfo);
 router.patch("/group/:channelId", protectRoute, renameGroup);
 router.post("/group/:channelId/members", protectRoute, addGroupMembers);
 router.delete("/group/:channelId/members/:userId", protectRoute, removeGroupMember);
+router.post("/group/:channelId/call", protectRoute, authorizeGroupCall);
 
 export default router;

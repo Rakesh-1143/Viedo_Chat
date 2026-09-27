@@ -11,7 +11,14 @@ import {
   Window,
 } from "stream-chat-react";
 import toast from "react-hot-toast";
-import { ArrowLeftIcon, FlagIcon, ImageIcon, ShieldBanIcon, StarIcon } from "lucide-react";
+import {
+  ArrowLeftIcon,
+  FlagIcon,
+  ImageIcon,
+  SearchIcon,
+  ShieldBanIcon,
+  StarIcon,
+} from "lucide-react";
 import useAuthUser from "../hooks/useAuthUser";
 import {
   authorizeDirectCall,
@@ -26,8 +33,10 @@ import ChatLoader from "../components/ChatLoader";
 import CallButton from "../components/CallButton";
 import StarredMessagesPanel from "../components/StarredMessagesPanel";
 import MediaGalleryPanel from "../components/MediaGalleryPanel";
+import ChatSearchPanel from "../components/ChatSearchPanel";
 import ChatOptionsMenu from "../components/ChatOptionsMenu";
 import ReportUserDialog from "../components/ReportUserDialog";
+import WhatsAppMessageStatus from "../components/WhatsAppMessageStatus";
 import { connectStreamUser, streamClient } from "../lib/stream";
 import { useVideoClient } from "../providers/videoContext";
 
@@ -46,6 +55,7 @@ const ChatPage = ({ id: propId }) => {
   const [showStarred, setShowStarred] = useState(false);
   const [showMedia, setShowMedia] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
 
   const { mutate: blockMutation } = useMutation({
     mutationFn: blockUser,
@@ -232,7 +242,7 @@ const ChatPage = ({ id: propId }) => {
   return (
     <div className="chat-workspace">
       <Chat client={streamClient}>
-        <Channel channel={channel}>
+        <Channel channel={channel} MessageStatus={WhatsAppMessageStatus}>
           <Window>
             <header className="conversation-header">
               <button
@@ -276,6 +286,12 @@ const ChatPage = ({ id: propId }) => {
               <ChatOptionsMenu
                 items={[
                   {
+                    key: "search",
+                    label: "Search messages",
+                    icon: SearchIcon,
+                    onSelect: () => setShowSearch(true),
+                  },
+                  {
                     key: "media",
                     label: "Shared media",
                     icon: ImageIcon,
@@ -305,9 +321,12 @@ const ChatPage = ({ id: propId }) => {
                 ]}
               />
             </header>
-            <MessageList />
+            <MessageList returnAllReadData />
             <TypingIndicator />
             <MessageInput focus audioRecordingEnabled />
+            {showSearch && (
+              <ChatSearchPanel channel={channel} onClose={() => setShowSearch(false)} />
+            )}
           </Window>
           <Thread />
         </Channel>

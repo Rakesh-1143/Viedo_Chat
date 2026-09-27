@@ -694,6 +694,52 @@ textarea:focus-visible {
   object-fit: cover;
 }
 
+/* Chat search (reuses .starred-panel shell) */
+.chat-search__input-wrap {
+  position: relative;
+  padding: 0.75rem 1.25rem 0.5rem;
+}
+
+.chat-search__input-wrap .input {
+  padding-left: 2.4rem;
+}
+
+.chat-search__icon {
+  position: absolute;
+  top: 50%;
+  left: 1.65rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  transform: translateY(-50%);
+  color: color-mix(in srgb, var(--color-base-content) 50%, transparent);
+  pointer-events: none;
+}
+
+.chat-search__result {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+/* WhatsApp-style read receipts */
+.wa-tick {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex: 0 0 auto;
+}
+
+.str-chat__message-status .wa-tick path {
+  fill: none !important;
+  stroke: currentColor;
+}
+
+.wa-tick--read {
+  color: #34b7f1;
+}
+
 /* Generic centered dialog (used instead of daisyUI's modal, whose div-based
    .modal-open toggle does not reliably stack above page content here) */
 .app-dialog {
@@ -822,6 +868,11 @@ textarea:focus-visible {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.call-person-avatar--group svg {
+  width: 2.25rem;
+  height: 2.25rem;
 }
 
 .incoming-call-label {

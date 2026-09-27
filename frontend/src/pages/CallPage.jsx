@@ -188,6 +188,14 @@ const CallExperience = () => {
 };
 
 const PersonAvatar = ({ call }) => {
+  if (call.state.custom?.isGroupCall) {
+    return (
+      <div className="call-person-avatar call-person-avatar--group">
+        <UsersIcon aria-hidden="true" />
+      </div>
+    );
+  }
+
   const person = call.state.members.find(
     ({ user }) => user.id !== call.currentUserId,
   )?.user;
