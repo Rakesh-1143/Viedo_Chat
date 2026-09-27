@@ -92,6 +92,56 @@ export async function createGroupChat({ name, memberIds }) {
   return response.data;
 }
 
+export async function getGroupInfo(channelId) {
+  const response = await axiosInstance.get(`/chat/group/${encodeURIComponent(channelId)}`);
+  return response.data;
+}
+
+export async function renameGroup(channelId, name) {
+  const response = await axiosInstance.patch(
+    `/chat/group/${encodeURIComponent(channelId)}`,
+    { name },
+  );
+  return response.data;
+}
+
+export async function addGroupMembers(channelId, memberIds) {
+  const response = await axiosInstance.post(
+    `/chat/group/${encodeURIComponent(channelId)}/members`,
+    { memberIds },
+  );
+  return response.data;
+}
+
+export async function removeGroupMember(channelId, userId) {
+  const response = await axiosInstance.delete(
+    `/chat/group/${encodeURIComponent(channelId)}/members/${encodeURIComponent(userId)}`,
+  );
+  return response.data;
+}
+
+export async function blockUser(userId) {
+  const response = await axiosInstance.post(`/users/block/${encodeURIComponent(userId)}`);
+  return response.data;
+}
+
+export async function unblockUser(userId) {
+  const response = await axiosInstance.post(`/users/unblock/${encodeURIComponent(userId)}`);
+  return response.data;
+}
+
+export async function getBlockedUsers() {
+  const response = await axiosInstance.get("/users/blocked");
+  return response.data;
+}
+
+export async function reportUser(userId, reason) {
+  const response = await axiosInstance.post(`/users/report/${encodeURIComponent(userId)}`, {
+    reason,
+  });
+  return response.data;
+}
+
 export async function logCallStart(payload) {
   const response = await axiosInstance.post("/calls", payload);
   return response.data;

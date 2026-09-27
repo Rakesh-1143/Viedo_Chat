@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import User from "../models/Users.js";
 import FriendRequest from "../models/FriendRequest.js";
+import Report from "../models/Report.js";
 import {
   cleanText,
   escapeRegex,
@@ -16,7 +17,8 @@ export async function getRecommendedUsers(req, res) {
     const limit = parsePositiveInteger(req.query.limit, 12, 50);
     const search = cleanText(req.query.search, 80);
     const query = {
-      _id: { $ne: req.user._id, $nin: req.user.friends },
+      _id: { $ne: req.user._id, $nin: [...req.user.friends, ...req.user.blocked] },
+      blocked: { $ne: req.user._id },
       isOnboarding: true,
     };
 
@@ -77,10 +79,16 @@ export async function sendFriendRequest(req, res) {
       return res.status(400).json({ message: "You cannot add yourself" });
     }
 
-    const recipient = await User.findById(recipientId).select("friends");
+    const recipient = await User.findById(recipientId).select("friends blocked");
     if (!recipient) return res.status(404).json({ message: "User not found" });
     if (recipient.friends.some((id) => id.equals(myId))) {
       return res.status(409).json({ message: "You are already connected" });
+    }
+    if (
+      recipient.blocked.some((id) => id.equals(myId)) ||
+      req.user.blocked.some((id) => id.equals(recipientId))
+    ) {
+      return res.status(403).json({ message: "You can't send a request to this user" });
     }
 
     const existingRequest = await FriendRequest.findOne({
@@ -177,6 +185,90 @@ export async function getOutgoingFriendReqs(req, res) {
     return res.status(200).json(outgoingRequests);
   } catch (error) {
     console.error("Error in getOutgoingFriendReqs controller", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function blockUser(req, res) {
+  try {
+    const myId = req.user._id;
+    const targetId = req.params.id;
+    if (!mongoose.isValidObjectId(targetId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+    if (String(myId) === targetId) {
+      return res.status(400).json({ message: "You cannot block yourself" });
+    }
+
+    await Promise.all([
+      User.findByIdAndUpdate(myId, {
+        $addToSet: { blocked: targetId },
+        $pull: { friends: targetId },
+      }),
+      User.findByIdAndUpdate(targetId, { $pull: { friends: myId } }),
+      FriendRequest.deleteMany({
+        $or: [
+          { sender: myId, recipient: targetId },
+          { sender: targetId, recipient: myId },
+        ],
+      }),
+    ]);
+
+    return res.status(200).json({ message: "User blocked" });
+  } catch (error) {
+    console.error("Error in blockUser controller", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function unblockUser(req, res) {
+  try {
+    const targetId = req.params.id;
+    if (!mongoose.isValidObjectId(targetId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+    await User.findByIdAndUpdate(req.user._id, { $pull: { blocked: targetId } });
+    return res.status(200).json({ message: "User unblocked" });
+  } catch (error) {
+    console.error("Error in unblockUser controller", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function getBlockedUsers(req, res) {
+  try {
+    const user = await User.findById(req.user._id)
+      .select("blocked")
+      .populate("blocked", publicProfileFields)
+      .lean();
+    return res.status(200).json(user?.blocked || []);
+  } catch (error) {
+    console.error("Error in getBlockedUsers controller", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function reportUser(req, res) {
+  try {
+    const targetId = req.params.id;
+    if (!mongoose.isValidObjectId(targetId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+    if (String(req.user._id) === targetId) {
+      return res.status(400).json({ message: "You cannot report yourself" });
+    }
+    const reason = cleanText(req.body?.reason, 500);
+    if (!reason) {
+      return res.status(400).json({ message: "Tell us what happened" });
+    }
+
+    const targetExists = await User.exists({ _id: targetId });
+    if (!targetExists) return res.status(404).json({ message: "User not found" });
+
+    await Report.create({ reporter: req.user._id, reportedUser: targetId, reason });
+    return res.status(201).json({ message: "Report submitted" });
+  } catch (error) {
+    console.error("Error in reportUser controller", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 }

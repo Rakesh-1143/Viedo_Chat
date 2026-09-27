@@ -10,12 +10,15 @@ import {
   TypingIndicator,
   Window,
 } from "stream-chat-react";
-import { ArrowLeftIcon, StarIcon, UsersIcon } from "lucide-react";
+import { ArrowLeftIcon, ImageIcon, InfoIcon, StarIcon, UsersIcon } from "lucide-react";
 import useAuthUser from "../hooks/useAuthUser";
 import { getStreamToken } from "../lib/api";
 import { connectStreamUser, streamClient } from "../lib/stream";
 import ChatLoader from "../components/ChatLoader";
 import StarredMessagesPanel from "../components/StarredMessagesPanel";
+import MediaGalleryPanel from "../components/MediaGalleryPanel";
+import GroupInfoPanel from "../components/GroupInfoPanel";
+import ChatOptionsMenu from "../components/ChatOptionsMenu";
 
 const GroupChatPage = () => {
   const { channelId } = useParams();
@@ -24,6 +27,8 @@ const GroupChatPage = () => {
   const [channel, setChannel] = useState(null);
   const [setupError, setSetupError] = useState(null);
   const [showStarred, setShowStarred] = useState(false);
+  const [showMedia, setShowMedia] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
 
   const {
     data: tokenData,
@@ -126,6 +131,22 @@ const GroupChatPage = () => {
               >
                 <StarIcon aria-hidden="true" />
               </button>
+              <ChatOptionsMenu
+                items={[
+                  {
+                    key: "media",
+                    label: "Shared media",
+                    icon: ImageIcon,
+                    onSelect: () => setShowMedia(true),
+                  },
+                  {
+                    key: "info",
+                    label: "Group info",
+                    icon: InfoIcon,
+                    onSelect: () => setShowInfo(true),
+                  },
+                ]}
+              />
             </header>
             <MessageList />
             <TypingIndicator />
@@ -137,6 +158,8 @@ const GroupChatPage = () => {
       {showStarred && (
         <StarredMessagesPanel channel={channel} onClose={() => setShowStarred(false)} />
       )}
+      {showMedia && <MediaGalleryPanel channel={channel} onClose={() => setShowMedia(false)} />}
+      {showInfo && <GroupInfoPanel channelId={channelId} onClose={() => setShowInfo(false)} />}
     </div>
   );
 };

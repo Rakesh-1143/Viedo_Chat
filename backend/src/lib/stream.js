@@ -47,6 +47,15 @@ export const createGroupChannel = async (channelId, memberIds, { name, createdBy
   return channel;
 };
 
+export const getGroupChannel = async (channelId) => {
+  if (!streamClient) throw new Error("Stream service is not configured");
+  if (!channelId.startsWith("group-")) return null;
+  const channel = streamClient.channel("messaging", channelId);
+  await channel.watch();
+  if (!channel.data?.is_group) return null;
+  return channel;
+};
+
 export const deleteStreamUser = async (userId) => {
   if (!streamClient) return;
   await streamClient.deleteUser(String(userId), {

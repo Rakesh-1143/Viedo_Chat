@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Channel,
   Chat,
@@ -11,10 +11,11 @@ import {
   Window,
 } from "stream-chat-react";
 import toast from "react-hot-toast";
-import { ArrowLeftIcon, StarIcon } from "lucide-react";
+import { ArrowLeftIcon, FlagIcon, ImageIcon, ShieldBanIcon, StarIcon } from "lucide-react";
 import useAuthUser from "../hooks/useAuthUser";
 import {
   authorizeDirectCall,
+  blockUser,
   getDirectConversation,
   getStreamToken,
   logCallStart,
@@ -24,6 +25,9 @@ import { getCallErrorMessage } from "../lib/call";
 import ChatLoader from "../components/ChatLoader";
 import CallButton from "../components/CallButton";
 import StarredMessagesPanel from "../components/StarredMessagesPanel";
+import MediaGalleryPanel from "../components/MediaGalleryPanel";
+import ChatOptionsMenu from "../components/ChatOptionsMenu";
+import ReportUserDialog from "../components/ReportUserDialog";
 import { connectStreamUser, streamClient } from "../lib/stream";
 import { useVideoClient } from "../providers/videoContext";
 
@@ -31,6 +35,7 @@ const ChatPage = ({ id: propId }) => {
   const { id: paramsId } = useParams();
   const targetUserId = propId || paramsId;
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { authUser } = useAuthUser();
   const { client: videoClient, error: videoError, isReady: videoReady } = useVideoClient();
   const [channel, setChannel] = useState(null);
@@ -39,6 +44,20 @@ const ChatPage = ({ id: propId }) => {
   const [lastActiveAt, setLastActiveAt] = useState(null);
   const [pendingMode, setPendingMode] = useState(null);
   const [showStarred, setShowStarred] = useState(false);
+  const [showMedia, setShowMedia] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+
+  const { mutate: blockMutation } = useMutation({
+    mutationFn: blockUser,
+    onSuccess: () => {
+      toast.success("User blocked");
+      queryClient.invalidateQueries({ queryKey: ["friends"] });
+      navigate("/");
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Could not block this user");
+    },
+  });
 
   const {
     data: tokenData,
@@ -254,6 +273,37 @@ const ChatPage = ({ id: propId }) => {
                 onStartCall={startCall}
                 pendingMode={pendingMode}
               />
+              <ChatOptionsMenu
+                items={[
+                  {
+                    key: "media",
+                    label: "Shared media",
+                    icon: ImageIcon,
+                    onSelect: () => setShowMedia(true),
+                  },
+                  {
+                    key: "report",
+                    label: "Report user",
+                    icon: FlagIcon,
+                    onSelect: () => setShowReport(true),
+                  },
+                  {
+                    key: "block",
+                    label: "Block user",
+                    icon: ShieldBanIcon,
+                    danger: true,
+                    onSelect: () => {
+                      if (
+                        window.confirm(
+                          `Block ${targetUser.fullName}? They won't be able to message you.`,
+                        )
+                      ) {
+                        blockMutation(targetUser._id);
+                      }
+                    },
+                  },
+                ]}
+              />
             </header>
             <MessageList />
             <TypingIndicator />
@@ -264,6 +314,14 @@ const ChatPage = ({ id: propId }) => {
       </Chat>
       {showStarred && (
         <StarredMessagesPanel channel={channel} onClose={() => setShowStarred(false)} />
+      )}
+      {showMedia && <MediaGalleryPanel channel={channel} onClose={() => setShowMedia(false)} />}
+      {showReport && (
+        <ReportUserDialog
+          targetUserId={targetUser._id}
+          targetName={targetUser.fullName}
+          onClose={() => setShowReport(false)}
+        />
       )}
     </div>
   );
