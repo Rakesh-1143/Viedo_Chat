@@ -1,20 +1,26 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { deleteAccount, updatePassword } from "../lib/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { deleteAccount, getBlockedUsers, unblockUser, updatePassword } from "../lib/api";
 import { streamClient } from "../lib/stream";
 import useLogout from "../hooks/useLogout";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
 import {
+  BellIcon,
   LockIcon,
+  ShieldBanIcon,
   Trash2Icon,
   LogOutIcon,
   EyeIcon,
   EyeOffIcon,
   SettingsIcon,
-  ChevronRightIcon,
 } from "lucide-react";
+import {
+  getNotificationPermission,
+  isNotificationSupported,
+  requestNotificationPermission,
+} from "../lib/notifications";
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -22,9 +28,37 @@ const SettingsPage = () => {
   const { logoutMutation } = useLogout();
 
   // Modals state
-  const [activeTab, setActiveTab] = useState("password"); // 'password', 'danger', 'account'
+  const [activeTab, setActiveTab] = useState("password"); // 'password', 'notifications', 'blocked', 'danger'
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteReason, setDeleteReason] = useState("");
+
+  const [notificationPermission, setNotificationPermission] = useState(() =>
+    getNotificationPermission(),
+  );
+
+  const { data: blockedUsers = [], isLoading: blockedLoading } = useQuery({
+    queryKey: ["blockedUsers"],
+    queryFn: getBlockedUsers,
+    enabled: activeTab === "blocked",
+  });
+
+  const { mutate: unblockMutation, isPending: isUnblocking } = useMutation({
+    mutationFn: unblockUser,
+    onSuccess: () => {
+      toast.success("User unblocked");
+      queryClient.invalidateQueries({ queryKey: ["blockedUsers"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to unblock user");
+    },
+  });
+
+  const handleEnableNotifications = async () => {
+    const result = await requestNotificationPermission();
+    setNotificationPermission(result);
+    if (result === "granted") toast.success("Notifications enabled");
+    else if (result === "denied") toast.error("Notifications were blocked in your browser");
+  };
 
   // Update Password State
   const [showPass, setShowPass] = useState(false);
@@ -82,6 +116,20 @@ const SettingsPage = () => {
           >
             <LockIcon className="size-4" />
             Password
+          </button>
+          <button
+            onClick={() => setActiveTab("notifications")}
+            className={`btn btn-ghost w-full justify-start gap-3 ${activeTab === "notifications" ? "btn-active" : ""}`}
+          >
+            <BellIcon className="size-4" />
+            Notifications
+          </button>
+          <button
+            onClick={() => setActiveTab("blocked")}
+            className={`btn btn-ghost w-full justify-start gap-3 ${activeTab === "blocked" ? "btn-active" : ""}`}
+          >
+            <ShieldBanIcon className="size-4" />
+            Blocked Users
           </button>
           <button
             onClick={() => setActiveTab("danger")}
@@ -199,6 +247,82 @@ const SettingsPage = () => {
                     </button>
                   </div>
                 </form>
+              </div>
+            )}
+
+            {activeTab === "notifications" && (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                <div>
+                  <h2 className="text-xl font-bold mb-1">Browser Notifications</h2>
+                  <p className="text-sm opacity-70">
+                    Get notified about new messages, friend requests, and incoming calls even
+                    when this tab isn't focused.
+                  </p>
+                </div>
+
+                {!isNotificationSupported() ? (
+                  <p className="text-sm opacity-70">
+                    Your browser doesn't support notifications.
+                  </p>
+                ) : notificationPermission === "granted" ? (
+                  <div className="p-4 border border-success/20 rounded-xl bg-success/5">
+                    <p className="text-sm font-semibold text-success">Notifications are enabled</p>
+                  </div>
+                ) : notificationPermission === "denied" ? (
+                  <div className="p-4 border border-error/20 rounded-xl bg-error/5">
+                    <p className="text-sm font-semibold text-error">Notifications are blocked</p>
+                    <p className="text-xs opacity-70 mt-1">
+                      Enable them for this site in your browser's settings.
+                    </p>
+                  </div>
+                ) : (
+                  <button className="btn btn-primary" onClick={handleEnableNotifications}>
+                    Enable Notifications
+                  </button>
+                )}
+              </div>
+            )}
+
+            {activeTab === "blocked" && (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                <div>
+                  <h2 className="text-xl font-bold mb-1">Blocked Users</h2>
+                  <p className="text-sm opacity-70">
+                    Blocked users can't send you friend requests or message you.
+                  </p>
+                </div>
+
+                {blockedLoading ? (
+                  <div className="flex justify-center py-6">
+                    <span className="loading loading-spinner" />
+                  </div>
+                ) : blockedUsers.length === 0 ? (
+                  <p className="text-sm opacity-70">You haven't blocked anyone.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {blockedUsers.map((user) => (
+                      <li
+                        key={user._id}
+                        className="flex items-center gap-3 p-3 rounded-xl border border-base-300"
+                      >
+                        <div className="avatar size-10 rounded-full overflow-hidden bg-base-300 shrink-0">
+                          <img src={user.profilePic} alt="" />
+                        </div>
+                        <span className="font-medium truncate min-w-0 flex-1">
+                          {user.fullName}
+                        </span>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline shrink-0"
+                          disabled={isUnblocking}
+                          onClick={() => unblockMutation(user._id)}
+                        >
+                          Unblock
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
 

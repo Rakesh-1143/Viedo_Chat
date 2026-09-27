@@ -11,6 +11,7 @@ import { useLocation, useNavigate } from "react-router";
 import toast from "react-hot-toast";
 import { getStreamToken } from "../lib/api";
 import { getCallMode } from "../lib/call";
+import { showNotification } from "../lib/notifications";
 import { VideoClientContext } from "./videoContext";
 
 const IncomingCallDialog = () => {
@@ -18,6 +19,7 @@ const IncomingCallDialog = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [action, setAction] = useState(null);
+  const notifiedCallId = useRef(null);
 
   const incomingCall = calls.find(
     (call) =>
@@ -25,6 +27,18 @@ const IncomingCallDialog = () => {
       call.state.callingState === CallingState.RINGING &&
       location.pathname !== `/call/${call.id}`,
   );
+
+  useEffect(() => {
+    if (!incomingCall || notifiedCallId.current === incomingCall.id) return;
+    notifiedCallId.current = incomingCall.id;
+    const caller = incomingCall.state.createdBy;
+    const mode = getCallMode(incomingCall);
+    showNotification(`Incoming ${mode} call`, {
+      body: `${caller?.name || "A connection"} is calling you`,
+      tag: `call-${incomingCall.id}`,
+      onClick: () => navigate(`/call/${incomingCall.id}?type=${encodeURIComponent(incomingCall.type)}`),
+    });
+  }, [incomingCall, navigate]);
 
   if (!incomingCall) return null;
 

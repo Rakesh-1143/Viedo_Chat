@@ -1,14 +1,16 @@
 import { useEffect, useRef } from "react";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { getFriendRequests, getStreamToken } from "../lib/api";
 import { connectStreamUser, streamClient } from "../lib/stream";
+import { showNotification } from "../lib/notifications";
 
 const FRIEND_REQUEST_POLL_MS = 25_000;
 
 export const useGlobalNotifications = (authUser) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const pathnameRef = useRef(location.pathname);
   useEffect(() => {
     pathnameRef.current = location.pathname;
@@ -33,15 +35,21 @@ export const useGlobalNotifications = (authUser) => {
       if (!isMessageEvent || String(event.user?.id) === String(authUser._id)) return;
 
       const channelId = event.channel_id || event.cid?.split(":")[1];
-      const otherUserId = channelId
-        ?.split("-")
-        .find((part) => part !== String(authUser._id));
-      const isViewingThisChat =
-        otherUserId && pathnameRef.current === `/chat/${otherUserId}`;
+      const isGroup = Boolean(channelId?.startsWith("group-"));
+      const otherUserId = isGroup
+        ? null
+        : channelId?.split("-").find((part) => part !== String(authUser._id));
+      const chatPath = isGroup ? `/chat/group/${channelId}` : `/chat/${otherUserId}`;
+      const isViewingThisChat = pathnameRef.current === chatPath;
 
       if (!isViewingThisChat) {
         const preview = (event.message?.text || "Sent a message").slice(0, 90);
         toast(`${event.user?.name || "New message"}: ${preview}`, { icon: "💬" });
+        showNotification(event.user?.name || "New message", {
+          body: preview,
+          tag: `message-${channelId}`,
+          onClick: () => navigate(chatPath),
+        });
       }
     };
 
@@ -55,7 +63,7 @@ export const useGlobalNotifications = (authUser) => {
       disposed = true;
       streamClient?.off(handleEvent);
     };
-  }, [authUser, tokenData?.token]);
+  }, [authUser, navigate, tokenData?.token]);
 
   const previousIncomingCount = useRef(null);
   const previousAcceptedCount = useRef(null);
@@ -76,20 +84,30 @@ export const useGlobalNotifications = (authUser) => {
       previousIncomingCount.current !== null &&
       incoming.length > previousIncomingCount.current
     ) {
-      toast.success(`${incoming[0]?.sender?.fullName || "Someone"} sent you a friend request`);
+      const senderName = incoming[0]?.sender?.fullName || "Someone";
+      toast.success(`${senderName} sent you a friend request`);
+      showNotification(senderName, {
+        body: "Sent you a friend request",
+        tag: "friend-request",
+        onClick: () => navigate("/notifications"),
+      });
     }
     if (
       previousAcceptedCount.current !== null &&
       accepted.length > previousAcceptedCount.current
     ) {
-      toast.success(
-        `${accepted[0]?.recipient?.fullName || "Someone"} accepted your friend request`,
-      );
+      const recipientName = accepted[0]?.recipient?.fullName || "Someone";
+      toast.success(`${recipientName} accepted your friend request`);
+      showNotification(recipientName, {
+        body: "Accepted your friend request",
+        tag: "friend-accepted",
+        onClick: () => navigate("/notifications"),
+      });
     }
 
     previousIncomingCount.current = incoming.length;
     previousAcceptedCount.current = accepted.length;
-  }, [friendRequests]);
+  }, [friendRequests, navigate]);
 };
 
 export default useGlobalNotifications;
