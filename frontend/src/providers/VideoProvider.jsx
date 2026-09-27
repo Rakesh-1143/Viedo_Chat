@@ -33,8 +33,12 @@ const IncomingCallDialog = () => {
     notifiedCallId.current = incomingCall.id;
     const caller = incomingCall.state.createdBy;
     const mode = getCallMode(incomingCall);
+    const isGroupCall = Boolean(incomingCall.state.custom?.isGroupCall);
+    const groupName = incomingCall.state.custom?.targetName;
     showNotification(`Incoming ${mode} call`, {
-      body: `${caller?.name || "A connection"} is calling you`,
+      body: isGroupCall
+        ? `${caller?.name || "Someone"} is calling in ${groupName || "a group"}`
+        : `${caller?.name || "A connection"} is calling you`,
       tag: `call-${incomingCall.id}`,
       onClick: () => navigate(`/call/${incomingCall.id}?type=${encodeURIComponent(incomingCall.type)}`),
     });
@@ -44,6 +48,8 @@ const IncomingCallDialog = () => {
 
   const caller = incomingCall.state.createdBy;
   const mode = getCallMode(incomingCall);
+  const isGroupCall = Boolean(incomingCall.state.custom?.isGroupCall);
+  const groupName = incomingCall.state.custom?.targetName;
 
   const acceptCall = async () => {
     setAction("accepting");
@@ -89,7 +95,7 @@ const IncomingCallDialog = () => {
             Incoming {mode === "audio" ? "audio" : "video"} call
           </p>
           <h2 id="incoming-call-title">{caller?.name || "A connection"}</h2>
-          <p>Wants to practice with you now</p>
+          <p>{isGroupCall ? `Calling in ${groupName || "a group"}` : "Wants to practice with you now"}</p>
         </div>
         <div className="incoming-call-actions">
           <button

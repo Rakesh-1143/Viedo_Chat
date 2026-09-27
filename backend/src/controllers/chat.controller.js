@@ -232,6 +232,32 @@ export async function renameGroup(req, res) {
   }
 }
 
+export async function authorizeGroupCall(req, res) {
+  try {
+    if (!isStreamConfigured()) {
+      return res.status(503).json({ message: "Real-time service is not configured" });
+    }
+    const channel = await getGroupChannel(req.params.channelId);
+    if (!channel) return res.status(404).json({ message: "Group not found" });
+
+    const memberIds = Object.keys(channel.state.members || {});
+    if (!memberIds.includes(String(req.user._id))) {
+      return res.status(403).json({ message: "You are not a member of this group" });
+    }
+
+    return res.status(200).json({
+      callId: randomUUID(),
+      callType: process.env.STREAM_CALL_TYPE || "default",
+      channelId: channel.id,
+      groupName: channel.data?.name || "Group",
+      memberIds,
+    });
+  } catch (error) {
+    console.error("Error authorizing group call", error.message);
+    return res.status(500).json({ message: "Could not start this call" });
+  }
+}
+
 export async function authorizeDirectCall(req, res) {
   try {
     if (!isStreamConfigured()) {

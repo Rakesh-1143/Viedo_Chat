@@ -1,18 +1,58 @@
 import mongoose from "mongoose";
 import Call, { TERMINAL_CALL_STATUSES } from "../models/Call.js";
 import User from "../models/Users.js";
+import { getGroupChannel } from "../lib/stream.js";
 
 const UPDATABLE_STATUSES = ["accepted", "completed", "rejected", "canceled", "missed"];
 const MAX_CALL_ID_LENGTH = 128;
 const publicProfileFields = "fullName profilePic nativeLanguage learningLanguage";
 
+async function logGroupCallStart(req, res, { callId, channelId, mode }) {
+  if (typeof channelId !== "string" || !channelId.startsWith("group-")) {
+    return res.status(400).json({ message: "Invalid group channel" });
+  }
+
+  const channel = await getGroupChannel(channelId);
+  if (!channel) return res.status(404).json({ message: "Group not found" });
+
+  const memberIds = Object.keys(channel.state.members || {});
+  if (!memberIds.includes(String(req.user._id))) {
+    return res.status(403).json({ message: "You are not a member of this group" });
+  }
+
+  const call = await Call.findOneAndUpdate(
+    { callId },
+    {
+      $setOnInsert: {
+        callId,
+        channelId,
+        mode: mode === "audio" ? "audio" : "video",
+        caller: req.user._id,
+        isGroupCall: true,
+        groupName: channel.data?.name || "Group",
+        participants: memberIds.filter((id) => mongoose.isValidObjectId(id)),
+        status: "ringing",
+        startedAt: new Date(),
+      },
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  );
+
+  return res.status(201).json(call);
+}
+
 export async function logCallStart(req, res) {
   try {
-    const { callId, channelId, calleeId, mode } = req.body || {};
+    const { callId, channelId, calleeId, mode, isGroupCall } = req.body || {};
 
     if (typeof callId !== "string" || !callId.trim() || callId.length > MAX_CALL_ID_LENGTH) {
       return res.status(400).json({ message: "A valid call ID is required" });
     }
+
+    if (isGroupCall) {
+      return await logGroupCallStart(req, res, { callId, channelId, mode });
+    }
+
     if (!mongoose.isValidObjectId(calleeId)) {
       return res.status(400).json({ message: "Invalid callee ID" });
     }
@@ -61,7 +101,9 @@ export async function updateCallStatus(req, res) {
 
     const isParticipant =
       String(call.caller) === String(req.user._id) ||
-      String(call.callee) === String(req.user._id);
+      (call.callee && String(call.callee) === String(req.user._id)) ||
+      (call.isGroupCall &&
+        call.participants.some((id) => String(id) === String(req.user._id)));
     if (!isParticipant) {
       return res.status(403).json({ message: "You are not part of this call" });
     }
@@ -95,7 +137,11 @@ export async function updateCallStatus(req, res) {
 export async function getCallHistory(req, res) {
   try {
     const calls = await Call.find({
-      $or: [{ caller: req.user._id }, { callee: req.user._id }],
+      $or: [
+        { caller: req.user._id },
+        { callee: req.user._id },
+        { participants: req.user._id },
+      ],
     })
       .sort({ startedAt: -1 })
       .limit(50)
@@ -104,7 +150,7 @@ export async function getCallHistory(req, res) {
       .lean();
 
     const history = calls
-      .filter((call) => call.caller && call.callee)
+      .filter((call) => call.caller && (call.isGroupCall || call.callee))
       .map((call) => {
         const isOutgoing = String(call.caller._id) === String(req.user._id);
         return {
@@ -116,7 +162,10 @@ export async function getCallHistory(req, res) {
           endedAt: call.endedAt,
           durationSeconds: call.durationSeconds,
           direction: isOutgoing ? "outgoing" : "incoming",
-          counterpart: isOutgoing ? call.callee : call.caller,
+          isGroupCall: Boolean(call.isGroupCall),
+          groupName: call.isGroupCall ? call.groupName : undefined,
+          channelId: call.isGroupCall ? call.channelId : undefined,
+          counterpart: call.isGroupCall ? null : isOutgoing ? call.callee : call.caller,
         };
       });
 

@@ -42,8 +42,23 @@ const callSchema = new mongoose.Schema(
     callee: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      default: null,
     },
+    isGroupCall: {
+      type: Boolean,
+      default: false,
+    },
+    groupName: {
+      type: String,
+      default: "",
+      maxlength: 80,
+    },
+    participants: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     status: {
       type: String,
       enum: CALL_STATUSES,
