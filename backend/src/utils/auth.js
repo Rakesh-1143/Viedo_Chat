@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import jwt from "jsonwebtoken";
 
 const AUTH_COOKIE = "jwt";
@@ -37,16 +38,20 @@ export const getCookieOptions = () => {
   };
 };
 
-export const issueAuthCookie = (res, userId) => {
+export const issueAuthCookie = (res, userId, jti = randomUUID()) => {
   const expiresIn = process.env.JWT_EXPIRES_IN || DEFAULT_AUTH_LIFETIME;
-  const token = jwt.sign({ userId: String(userId) }, process.env.JWT_SECRET_KEY, {
-    expiresIn,
-  });
+  const token = jwt.sign(
+    { userId: String(userId), jti },
+    process.env.JWT_SECRET_KEY,
+    { expiresIn },
+  );
 
   res.cookie(AUTH_COOKIE, token, {
     ...getCookieOptions(),
     maxAge: getLifetimeMs(expiresIn),
   });
+
+  return jti;
 };
 
 export const clearAuthCookie = (res) => {
