@@ -115,8 +115,8 @@ const OnboardingPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-base-100 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="card bg-base-200 w-full max-w-3xl shadow-xl my-8">
+    <div className="onboarding-page flex items-start sm:items-center justify-center">
+      <div className="card bg-base-200 w-full max-w-3xl shadow-xl my-4 sm:my-8">
         <div className="card-body p-6 sm:p-8">
           <div className="text-center mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold mb-2">

@@ -269,10 +269,23 @@ textarea:focus-visible {
 
 /* Authentication */
 .auth-page {
-  min-height: 100dvh;
+  height: 100dvh;
   overflow-y: auto;
   padding: 1rem;
   background: var(--color-base-200);
+}
+
+.onboarding-page {
+  height: 100dvh;
+  overflow-y: auto;
+  padding: 1rem;
+  background: var(--color-base-100);
+}
+
+@media (max-width: 639px) {
+  .onboarding-page {
+    padding: 0.5rem;
+  }
 }
 
 .auth-panel {
