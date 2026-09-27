@@ -46,6 +46,7 @@ import ChatSearchPanel from "../components/ChatSearchPanel";
 import ChatOptionsMenu from "../components/ChatOptionsMenu";
 import ReportUserDialog from "../components/ReportUserDialog";
 import WallpaperPicker from "../components/WallpaperPicker";
+import ForwardMessageDialog from "../components/ForwardMessageDialog";
 import WhatsAppMessageStatus from "../components/WhatsAppMessageStatus";
 import { connectStreamUser, streamClient } from "../lib/stream";
 import { useVideoClient } from "../providers/videoContext";
@@ -68,6 +69,7 @@ const ChatPage = ({ id: propId }) => {
   const [showSearch, setShowSearch] = useState(false);
   const [showWallpaper, setShowWallpaper] = useState(false);
   const [wallpaper, setWallpaperState] = useState(null);
+  const [forwardMessage, setForwardMessage] = useState(null);
   const { isPinned, isMuted, togglePin, toggleMute, archiveConversation, exportHistory } =
     useConversationActions(channel);
 
@@ -369,7 +371,12 @@ const ChatPage = ({ id: propId }) => {
                 ]}
               />
             </header>
-            <MessageList returnAllReadData />
+            <MessageList
+              returnAllReadData
+              customMessageActions={{
+                Forward: (message) => setForwardMessage(message),
+              }}
+            />
             <TypingIndicator />
             <MessageInput focus audioRecordingEnabled />
             {showSearch && (
@@ -399,6 +406,12 @@ const ChatPage = ({ id: propId }) => {
             setShowWallpaper(false);
           }}
           onClose={() => setShowWallpaper(false)}
+        />
+      )}
+      {forwardMessage && (
+        <ForwardMessageDialog
+          message={forwardMessage}
+          onClose={() => setForwardMessage(null)}
         />
       )}
     </div>
