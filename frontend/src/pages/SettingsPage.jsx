@@ -1,13 +1,24 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { deleteAccount, getBlockedUsers, unblockUser, updatePassword } from "../lib/api";
+import {
+  deleteAccount,
+  getBlockedUsers,
+  getSessions,
+  revokeOtherSessions,
+  revokeSession,
+  unblockUser,
+  updatePassword,
+  updateProfile,
+} from "../lib/api";
 import { streamClient } from "../lib/stream";
+import useAuthUser from "../hooks/useAuthUser";
 import useLogout from "../hooks/useLogout";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
 import {
   BellIcon,
+  LaptopIcon,
   LockIcon,
   ShieldBanIcon,
   Trash2Icon,
@@ -15,22 +26,68 @@ import {
   EyeIcon,
   EyeOffIcon,
   SettingsIcon,
+  UserIcon,
 } from "lucide-react";
 import {
   getNotificationPermission,
   isNotificationSupported,
   requestNotificationPermission,
 } from "../lib/notifications";
+import { formatUserAgent } from "../lib/utils";
 
 const SettingsPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { logoutMutation } = useLogout();
+  const { authUser } = useAuthUser();
 
   // Modals state
-  const [activeTab, setActiveTab] = useState("password"); // 'password', 'notifications', 'blocked', 'danger'
+  const [activeTab, setActiveTab] = useState("password"); // 'password', 'profile', 'notifications', 'blocked', 'sessions', 'danger'
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteReason, setDeleteReason] = useState("");
+
+  const [bio, setBio] = useState(authUser?.bio || "");
+
+  const { mutate: updateProfileMutation, isPending: isSavingProfile } = useMutation({
+    mutationFn: () => updateProfile(bio.trim()),
+    onSuccess: (data) => {
+      toast.success("Status updated");
+      queryClient.setQueryData(["authUser"], (old) =>
+        old ? { ...old, user: data.user } : old,
+      );
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Could not update your status");
+    },
+  });
+
+  const { data: sessions = [], isLoading: sessionsLoading } = useQuery({
+    queryKey: ["sessions"],
+    queryFn: getSessions,
+    enabled: activeTab === "sessions",
+  });
+
+  const { mutate: revokeSessionMutation, isPending: isRevoking } = useMutation({
+    mutationFn: revokeSession,
+    onSuccess: () => {
+      toast.success("Signed out of that device");
+      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Could not sign out that device");
+    },
+  });
+
+  const { mutate: revokeOthersMutation, isPending: isRevokingOthers } = useMutation({
+    mutationFn: revokeOtherSessions,
+    onSuccess: () => {
+      toast.success("Signed out of all other devices");
+      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Could not sign out other devices");
+    },
+  });
 
   const [notificationPermission, setNotificationPermission] = useState(() =>
     getNotificationPermission(),
@@ -111,11 +168,25 @@ const SettingsPage = () => {
         {/* SIDEBAR TABS */}
         <div className="lg:col-span-1 space-y-1">
           <button
+            onClick={() => setActiveTab("profile")}
+            className={`btn btn-ghost w-full justify-start gap-3 ${activeTab === "profile" ? "btn-active" : ""}`}
+          >
+            <UserIcon className="size-4" />
+            Profile
+          </button>
+          <button
             onClick={() => setActiveTab("password")}
             className={`btn btn-ghost w-full justify-start gap-3 ${activeTab === "password" ? "btn-active" : ""}`}
           >
             <LockIcon className="size-4" />
             Password
+          </button>
+          <button
+            onClick={() => setActiveTab("sessions")}
+            className={`btn btn-ghost w-full justify-start gap-3 ${activeTab === "sessions" ? "btn-active" : ""}`}
+          >
+            <LaptopIcon className="size-4" />
+            Active Sessions
           </button>
           <button
             onClick={() => setActiveTab("notifications")}
@@ -151,6 +222,41 @@ const SettingsPage = () => {
         {/* CONTENT AREA */}
         <div className="lg:col-span-3 card bg-base-200 shadow-sm border border-base-300">
           <div className="card-body">
+            {activeTab === "profile" && (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                <div>
+                  <h2 className="text-xl font-bold mb-1">Profile Status</h2>
+                  <p className="text-sm opacity-70">
+                    A short status or bio shown on your profile, like &quot;Hey there, I'm
+                    using Streamify&quot;.
+                  </p>
+                </div>
+
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    updateProfileMutation();
+                  }}
+                  className="space-y-4 max-w-md"
+                >
+                  <textarea
+                    className="textarea textarea-bordered w-full h-24 bg-base-100"
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    maxLength={500}
+                    placeholder="Write a short status..."
+                  />
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={isSavingProfile || !bio.trim()}
+                  >
+                    {isSavingProfile ? "Saving..." : "Save Status"}
+                  </button>
+                </form>
+              </div>
+            )}
+
             {activeTab === "password" && (
               <div className="space-y-6 animate-in fade-in duration-300">
                 <div>
@@ -319,6 +425,76 @@ const SettingsPage = () => {
                         >
                           Unblock
                         </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {activeTab === "sessions" && (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <h2 className="text-xl font-bold mb-1">Active Sessions</h2>
+                    <p className="text-sm opacity-70">
+                      Devices currently signed in to your account.
+                    </p>
+                  </div>
+                  {sessions.length > 1 && (
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm shrink-0"
+                      disabled={isRevokingOthers}
+                      onClick={() => revokeOthersMutation()}
+                    >
+                      Log out other devices
+                    </button>
+                  )}
+                </div>
+
+                {sessionsLoading ? (
+                  <div className="flex justify-center py-6">
+                    <span className="loading loading-spinner" />
+                  </div>
+                ) : sessions.length === 0 ? (
+                  <p className="text-sm opacity-70">No active sessions found.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {sessions.map((session) => (
+                      <li
+                        key={session._id}
+                        className="flex items-center gap-3 p-3 rounded-xl border border-base-300"
+                      >
+                        <LaptopIcon className="size-5 opacity-60 shrink-0" aria-hidden="true" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">
+                            {formatUserAgent(session.userAgent)}
+                            {session.isCurrent && (
+                              <span className="badge badge-success badge-sm ml-2">
+                                This device
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs opacity-50">
+                            Last active {new Date(session.lastSeenAt).toLocaleString([], {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                        {!session.isCurrent && (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline shrink-0"
+                            disabled={isRevoking}
+                            onClick={() => revokeSessionMutation(session._id)}
+                          >
+                            Log out
+                          </button>
+                        )}
                       </li>
                     ))}
                   </ul>

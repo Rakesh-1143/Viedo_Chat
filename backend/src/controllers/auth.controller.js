@@ -1,5 +1,8 @@
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 import User from "../models/Users.js";
 import FriendRequest from "../models/FriendRequest.js";
+import Session from "../models/Session.js";
 import { deleteStreamUser, upsertStreamUser } from "../lib/stream.js";
 import { clearAuthCookie, issueAuthCookie } from "../utils/auth.js";
 import {
@@ -14,6 +17,16 @@ import {
 } from "../utils/validation.js";
 
 const publicUser = (user) => user.toJSON();
+
+const startSession = async (req, res, userId) => {
+  const jti = issueAuthCookie(res, userId);
+  await Session.create({
+    user: userId,
+    jti,
+    userAgent: cleanText(req.headers["user-agent"], 300),
+    ip: cleanText(req.ip, 64),
+  });
+};
 
 export async function signup(req, res) {
   const fullName = cleanText(req.body.fullName, 80);
@@ -61,7 +74,7 @@ export async function signup(req, res) {
       console.error("Failed to create Stream user", error.message);
     }
 
-    issueAuthCookie(res, newUser._id);
+    await startSession(req, res, newUser._id);
     return res.status(201).json({ success: true, user: publicUser(newUser) });
   } catch (error) {
     if (error?.code === 11000) {
@@ -95,7 +108,7 @@ export async function login(req, res) {
       console.error("Failed to sync Stream user", error.message);
     }
 
-    issueAuthCookie(res, user._id);
+    await startSession(req, res, user._id);
     return res.status(200).json({ success: true, user: publicUser(user) });
   } catch (error) {
     console.error("Error in login controller", error.message);
@@ -103,7 +116,18 @@ export async function login(req, res) {
   }
 }
 
-export function logout(req, res) {
+export async function logout(req, res) {
+  const token = req.cookies?.jwt;
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+      if (decoded?.jti) {
+        await Session.updateOne({ jti: decoded.jti }, { $set: { revokedAt: new Date() } });
+      }
+    } catch {
+      // Token already invalid/expired -- nothing to revoke.
+    }
+  }
   clearAuthCookie(res);
   return res.status(200).json({ success: true, message: "Signed out successfully" });
 }
@@ -177,6 +201,7 @@ export async function deleteAccount(req, res) {
       FriendRequest.deleteMany({
         $or: [{ sender: userId }, { recipient: userId }],
       }),
+      Session.deleteMany({ user: userId }),
     ]);
 
     await User.findByIdAndDelete(userId);
@@ -216,6 +241,88 @@ export async function updatePassword(req, res) {
     return res.status(200).json({ message: "Password updated successfully" });
   } catch (error) {
     console.error("Error in updatePassword controller", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function updateProfile(req, res) {
+  try {
+    const bio = cleanText(req.body?.bio, 500);
+    if (!bio) {
+      return res.status(400).json({ message: "Write a short status to save" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { bio },
+      { new: true, runValidators: true },
+    );
+    if (!updatedUser) return res.status(404).json({ message: "User not found" });
+
+    return res.status(200).json({ success: true, user: publicUser(updatedUser) });
+  } catch (error) {
+    console.error("Error in updateProfile controller", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function getSessions(req, res) {
+  try {
+    const sessions = await Session.find({ user: req.user._id, revokedAt: null })
+      .sort({ lastSeenAt: -1 })
+      .lean();
+
+    const currentJti = req.sessionJti;
+    return res.status(200).json(
+      sessions.map((session) => ({
+        _id: session._id,
+        userAgent: session.userAgent,
+        ip: session.ip,
+        lastSeenAt: session.lastSeenAt,
+        createdAt: session.createdAt,
+        isCurrent: session.jti === currentJti,
+      })),
+    );
+  } catch (error) {
+    console.error("Error in getSessions controller", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function revokeSession(req, res) {
+  try {
+    const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid session ID" });
+    }
+
+    const session = await Session.findOne({ _id: id, user: req.user._id });
+    if (!session) return res.status(404).json({ message: "Session not found" });
+
+    session.revokedAt = new Date();
+    await session.save();
+
+    return res.status(200).json({ message: "Session signed out" });
+  } catch (error) {
+    console.error("Error in revokeSession controller", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function revokeOtherSessions(req, res) {
+  try {
+    await Session.updateMany(
+      {
+        user: req.user._id,
+        jti: { $ne: req.sessionJti },
+        revokedAt: null,
+      },
+      { $set: { revokedAt: new Date() } },
+    );
+
+    return res.status(200).json({ message: "Signed out of all other devices" });
+  } catch (error) {
+    console.error("Error in revokeOtherSessions controller", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 }

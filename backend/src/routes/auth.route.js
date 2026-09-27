@@ -7,6 +7,10 @@ import {
   onboard,
   deleteAccount,
   updatePassword,
+  updateProfile,
+  getSessions,
+  revokeSession,
+  revokeOtherSessions,
 } from "../controllers/auth.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 
@@ -45,6 +49,11 @@ router.put(
   protectRoute,
   updatePassword,
 );
+router.put("/profile", protectRoute, updateProfile);
+
+router.get("/sessions", protectRoute, getSessions);
+router.delete("/sessions/others", protectRoute, revokeOtherSessions);
+router.delete("/sessions/:id", protectRoute, revokeSession);
 
 router.get("/me", protectRoute, (req, res) => {
   res.status(200).json({ success: true, user: req.user });

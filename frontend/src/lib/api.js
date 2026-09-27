@@ -194,3 +194,23 @@ export async function cancelScheduledMessage(id) {
   );
   return response.data;
 }
+
+export async function updateProfile(bio) {
+  const response = await axiosInstance.put("/auth/profile", { bio });
+  return response.data;
+}
+
+export async function getSessions() {
+  const response = await axiosInstance.get("/auth/sessions");
+  return response.data;
+}
+
+export async function revokeSession(id) {
+  const response = await axiosInstance.delete(`/auth/sessions/${encodeURIComponent(id)}`);
+  return response.data;
+}
+
+export async function revokeOtherSessions() {
+  const response = await axiosInstance.delete("/auth/sessions/others");
+  return response.data;
+}
