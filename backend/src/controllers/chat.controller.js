@@ -6,12 +6,14 @@ import {
   createGroupChannel,
   generateStreamToken,
   getGroupChannel,
+  getMemberChannel,
   isStreamConfigured,
 } from "../lib/stream.js";
 import { cleanText } from "../utils/validation.js";
 
 const MIN_GROUP_MEMBERS = 2;
 const MAX_GROUP_MEMBERS = 50;
+const DISAPPEARING_DURATIONS = [0, 3_600, 86_400, 604_800];
 
 export async function getStreamToken(req, res) {
   try {
@@ -275,5 +277,30 @@ export async function authorizeDirectCall(req, res) {
   } catch (error) {
     console.error("Error authorizing direct call", error.message);
     return res.status(500).json({ message: "Could not start this call" });
+  }
+}
+
+export async function setDisappearingMessages(req, res) {
+  try {
+    if (!isStreamConfigured()) {
+      return res.status(503).json({ message: "Real-time service is not configured" });
+    }
+
+    const durationSeconds = Number(req.body?.durationSeconds);
+    if (!DISAPPEARING_DURATIONS.includes(durationSeconds)) {
+      return res.status(400).json({ message: "Invalid disappearing-messages duration" });
+    }
+
+    const channel = await getMemberChannel(req.params.channelId, req.user._id);
+    if (!channel) {
+      return res.status(403).json({ message: "You are not part of this conversation" });
+    }
+
+    await channel.updatePartial({ set: { disappearing_duration_seconds: durationSeconds } });
+
+    return res.status(200).json({ durationSeconds });
+  } catch (error) {
+    console.error("Error updating disappearing messages", error.message);
+    return res.status(500).json({ message: "Could not update this setting" });
   }
 }

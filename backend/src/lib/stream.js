@@ -56,6 +56,15 @@ export const getGroupChannel = async (channelId) => {
   return channel;
 };
 
+export const getMemberChannel = async (channelId, userId) => {
+  if (!streamClient) throw new Error("Stream service is not configured");
+  const channel = streamClient.channel("messaging", channelId);
+  await channel.watch();
+  const memberIds = Object.keys(channel.state.members || {});
+  if (!memberIds.includes(String(userId))) return null;
+  return channel;
+};
+
 export const deleteStreamUser = async (userId) => {
   if (!streamClient) return;
   await streamClient.deleteUser(String(userId), {
@@ -65,3 +74,8 @@ export const deleteStreamUser = async (userId) => {
 };
 
 export const isStreamConfigured = () => Boolean(streamClient);
+
+export const getStreamClient = () => {
+  if (!streamClient) throw new Error("Stream service is not configured");
+  return streamClient;
+};

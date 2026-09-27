@@ -16,6 +16,7 @@ import {
   ArrowLeftIcon,
   BellIcon,
   BellOffIcon,
+  ClockIcon,
   DownloadIcon,
   FlagIcon,
   ImageIcon,
@@ -25,6 +26,7 @@ import {
   SearchIcon,
   ShieldBanIcon,
   StarIcon,
+  TimerIcon,
 } from "lucide-react";
 import useAuthUser from "../hooks/useAuthUser";
 import {
@@ -47,6 +49,8 @@ import ChatOptionsMenu from "../components/ChatOptionsMenu";
 import ReportUserDialog from "../components/ReportUserDialog";
 import WallpaperPicker from "../components/WallpaperPicker";
 import ForwardMessageDialog from "../components/ForwardMessageDialog";
+import ScheduledMessagesPanel from "../components/ScheduledMessagesPanel";
+import DisappearingMessagesDialog from "../components/DisappearingMessagesDialog";
 import WhatsAppMessageStatus from "../components/WhatsAppMessageStatus";
 import { connectStreamUser, streamClient } from "../lib/stream";
 import { useVideoClient } from "../providers/videoContext";
@@ -70,6 +74,13 @@ const ChatPage = ({ id: propId }) => {
   const [showWallpaper, setShowWallpaper] = useState(false);
   const [wallpaper, setWallpaperState] = useState(null);
   const [forwardMessage, setForwardMessage] = useState(null);
+  const [showScheduled, setShowScheduled] = useState(false);
+  const [showDisappearing, setShowDisappearing] = useState(false);
+  const [disappearingDuration, setDisappearingDuration] = useState(0);
+
+  useEffect(() => {
+    if (channel) setDisappearingDuration(channel.data?.disappearing_duration_seconds || 0);
+  }, [channel]);
   const { isPinned, isMuted, togglePin, toggleMute, archiveConversation, exportHistory } =
     useConversationActions(channel);
 
@@ -342,6 +353,18 @@ const ChatPage = ({ id: propId }) => {
                     onSelect: () => exportHistory(targetUser.fullName),
                   },
                   {
+                    key: "scheduled",
+                    label: "Scheduled messages",
+                    icon: ClockIcon,
+                    onSelect: () => setShowScheduled(true),
+                  },
+                  {
+                    key: "disappearing",
+                    label: "Disappearing messages",
+                    icon: TimerIcon,
+                    onSelect: () => setShowDisappearing(true),
+                  },
+                  {
                     key: "archive",
                     label: "Archive conversation",
                     icon: ArchiveIcon,
@@ -412,6 +435,17 @@ const ChatPage = ({ id: propId }) => {
         <ForwardMessageDialog
           message={forwardMessage}
           onClose={() => setForwardMessage(null)}
+        />
+      )}
+      {showScheduled && (
+        <ScheduledMessagesPanel channelId={channel.id} onClose={() => setShowScheduled(false)} />
+      )}
+      {showDisappearing && (
+        <DisappearingMessagesDialog
+          channelId={channel.id}
+          current={disappearingDuration}
+          onUpdated={setDisappearingDuration}
+          onClose={() => setShowDisappearing(false)}
         />
       )}
     </div>
