@@ -20,6 +20,7 @@ import { capitialize } from "../lib/utils";
 
 import NoFriendsFound from "../components/NoFriendsFound";
 import LanguageFlag from "../components/LanguageFlag";
+import FriendCard from "../components/FriendCard";
 import { useNavigationStore } from "../store/useNavigationStore";
 import ChatPage from "./ChatPage";
 
@@ -124,7 +125,27 @@ const HomePage = () => {
                 <NoFriendsFound />
               </div>
             ) : (
-              <ChatPage id={friends[0]._id} />
+              <>
+                {/* Desktop: the sidebar's conversation list stays visible, so opening the
+                    most recent chat alongside it matches familiar inbox layouts. */}
+                <div className="hidden h-full lg:block">
+                  <ChatPage id={friends[0]._id} />
+                </div>
+
+                {/* Mobile: the sidebar is hidden by default, so jumping straight into a
+                    chat left no way back to a conversation list. Show the list instead. */}
+                <div className="p-4 sm:p-6 space-y-6 lg:hidden">
+                  <div>
+                    <p className="page-kicker">Conversations</p>
+                    <h2 className="text-2xl font-bold tracking-tight">Chats</h2>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {friends.map((friend) => (
+                      <FriendCard key={friend._id} friend={friend} />
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
           </>
         )}
