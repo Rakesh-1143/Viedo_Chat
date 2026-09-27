@@ -1,5 +1,6 @@
 import ScheduledMessage from "../models/ScheduledMessage.js";
 import { getStreamClient, isStreamConfigured } from "../lib/stream.js";
+import { sendPushToUser } from "../lib/push.js";
 
 const SCHEDULED_MESSAGE_INTERVAL_MS = 30_000;
 const DISAPPEARING_SWEEP_INTERVAL_MS = 60_000;
@@ -24,6 +25,24 @@ const dispatchDueScheduledMessages = async () => {
       scheduledMessage.status = "sent";
       scheduledMessage.sentAt = new Date();
       await scheduledMessage.save();
+
+      const senderId = String(scheduledMessage.sender);
+      const recipientIds = scheduledMessage.channelId.startsWith("group-")
+        ? Object.keys(channel.state.members || {})
+        : scheduledMessage.channelId.split("-");
+      recipientIds
+        .filter((id) => id !== senderId)
+        .forEach((id) => {
+          sendPushToUser(id, {
+            title: "New scheduled message",
+            body: scheduledMessage.text.slice(0, 120),
+            url: scheduledMessage.channelId.startsWith("group-")
+              ? `/chat/group/${scheduledMessage.channelId}`
+              : `/chat/${senderId}`,
+          }).catch((error) =>
+            console.error("Failed to push scheduled message notice", error.message),
+          );
+        });
     } catch (error) {
       console.error("Failed to dispatch scheduled message", scheduledMessage.id, error.message);
       scheduledMessage.status = "failed";
